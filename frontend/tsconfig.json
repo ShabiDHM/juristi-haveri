@@ -1,0 +1,33 @@
+// FILE: /advocatus-frontend/tsconfig.json
+// PHOENIX PROTOCOL MODIFICATION 42.1 (FINAL):
+// 1. MODULE INTEROP: Enabled `esModuleInterop` and `allowSyntheticDefaultImports`.
+//    This is critical for ensuring TypeScript can correctly resolve and type-check
+//    CommonJS modules like `react-datepicker` within our modern ES Module
+//    (ESNext) codebase. This directly resolves the TS2307 build failure.
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src", "vite-env.d.ts"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

@@ -1,0 +1,38 @@
+# FILE: Caddyfile
+# PHOENIX PROTOCOL - UNIFIED GATEWAY CONFIG V9.0 (FINAL ROUTING SYNC)
+# 1. FIXED: Pointed api.haveri.tech to the correct container name 'haveri-backend'.
+# 2. FIXED: Explicitly passing Host and Origin for CORS bypass.
+
+{
+    email shabanbala@gmail.com
+}
+
+# JURISTI API GATEWAY
+api.juristi.tech {
+    reverse_proxy juristi-backend:8000 {
+        header_up Host {host}
+        header_up Origin {header.Origin}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Port {server_port}
+        header_up X-Forwarded-Proto {scheme}
+
+        transport http {
+            read_timeout 10m
+        }
+    }
+}
+
+# HAVERI API GATEWAY
+api.haveri.tech {
+    reverse_proxy haveri-backend:8000 {
+        header_up Host {host}
+        header_up Origin {header.Origin}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Port {server_port}
+        header_up X-Forwarded-Proto {scheme}
+
+        transport http {
+            read_timeout 10m
+        }
+    }
+}

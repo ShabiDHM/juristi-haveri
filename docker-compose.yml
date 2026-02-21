@@ -1,0 +1,110 @@
+# PHOENIX PROTOCOL - JURISTI-HAVERI INDEPENDENT INSTANCE V1.0
+version: '3.8'
+
+services:
+  backend:
+    build: { context: ./backend }
+    container_name: juristi-haveri-backend
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4 --proxy-headers
+    env_file: ./.env
+    volumes:
+      - ./backend:/app
+      - ./data:/app/data
+    networks:
+      - juristi_haveri_net
+      - shared_gateway_net
+    depends_on:
+      mongo: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      neo4j: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  celery:
+    build: { context: ./backend }
+    container_name: juristi-haveri-celery
+    restart: unless-stopped
+    command: celery -A app.worker.celery_app worker --loglevel=info --concurrency=4
+    env_file: ./.env
+    volumes:
+      - ./backend:/app
+      - ./data:/app/data
+    networks:
+      - juristi_haveri_net
+      - shared_gateway_net
+    depends_on:
+      redis: { condition: service_healthy }
+      mongo: { condition: service_healthy }
+
+  mongo:
+    image: mongo:6.0
+    container_name: juristi-haveri-mongo
+    restart: unless-stopped
+    env_file: ./.env
+    networks:
+      - juristi_haveri_net
+    volumes:
+      - juristi_haveri_mongo_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: juristi-haveri-redis
+    restart: unless-stopped
+    networks:
+      - juristi_haveri_net
+    volumes:
+      - juristi_haveri_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: juristi-haveri-chroma
+    restart: unless-stopped
+    networks:
+      - juristi_haveri_net
+    environment:
+      - IS_PERSISTENT=TRUE
+    volumes:
+      - juristi_haveri_chroma_data:/data
+
+  neo4j:
+    image: neo4j:5
+    container_name: juristi-haveri-neo4j
+    restart: unless-stopped
+    environment:
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD}
+    volumes:
+      - juristi_haveri_neo4j_data:/data
+    networks:
+      - juristi_haveri_net
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:7474"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  juristi_haveri_mongo_data: {}
+  juristi_haveri_chroma_data: {}
+  juristi_haveri_redis_data: {}
+  juristi_haveri_neo4j_data: {}
+
+networks:
+  juristi_haveri_net:
+    driver: bridge
+  shared_gateway_net:
+    external: true

@@ -24,7 +24,7 @@ api.juristi.tech {
 
 # HAVERI API GATEWAY
 api.haveri.tech {
-    reverse_proxy haveri-backend:8000 {
+    reverse_proxy juristi-haveri-backend:8000 {
         header_up Host {host}
         header_up Origin {header.Origin}
         header_up X-Real-IP {remote_host}

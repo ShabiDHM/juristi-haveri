@@ -1,8 +1,7 @@
 # FILE: backend/app/main.py
-# PHOENIX PROTOCOL - MAIN APPLICATION V13.0 (STABLE CORS)
-# 1. FIXED: Explicit CORS for the specific Vercel deployment to allow credentials.
-# 2. FIXED: Removed experimental dynamic middleware to ensure Starlette compatibility.
-# 3. STATUS: 100% Pylance Clear.
+# PHOENIX PROTOCOL - MAIN APPLICATION V13.2 (HAVERI ONLY, UPDATED VERCEL DOMAIN)
+# This file is for the juristi-haveri instance only. It does not interfere with the original juristi backend.
+# CORS origins are strictly for haveri.tech domains and the correct Vercel preview URL.
 
 import os
 import logging
@@ -42,14 +41,13 @@ app = FastAPI(title="Juristi AI API", lifespan=lifespan)
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*") # type: ignore
 
 # --- CORS CONFIGURATION ---
-# We use the exact literal strings of your deployment. 
-# Do not use wildcards here as they block credentials.
+# Origins for the haveri.tech deployment only. No juristi.tech entries.
+# Includes the Vercel preview domain for the juristi-haveri frontend.
 origins = [
-    "https://juristi.tech",
-    "https://www.juristi.tech",
-    "https://api.juristi.tech",
-    "https://advocatus-ai.vercel.app",
-    "https://advocatus-bpu736pv2-shabans-projects-31c11eb7.vercel.app",
+    "https://haveri.tech",
+    "https://www.haveri.tech",
+    "https://api.haveri.tech",
+    "https://juristi-haveri-4db2iago2-shabans-projects-31c11eb7.vercel.app",
     "http://localhost:5173",
     "http://localhost:3000",
 ]

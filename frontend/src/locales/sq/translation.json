@@ -123,11 +123,11 @@
     }
   },
   "dashboard": {
-    "mainTitle": "Pasqyra e Rasteve",
-    "subtitle": "Menaxhoni rastet tuaja.",
-    "newCase": "Rast i Ri",
-    "createCaseTitle": "Krijo Rast të Ri",
-    "caseTitle": "Titulli i Rastit",
+    "mainTitle": "Pasqyra e Klientve",
+    "subtitle": "Menaxhoni klientët tuaj.",
+    "newCase": "Klient i Ri",
+    "createCaseTitle": "Krijo Klient të Ri",
+    "caseTitle": "Titulli i Klientit",
     "clientName": "Emri i Klientit",
     "clientEmail": "Email i Klientit",
     "clientPhone": "Telefoni i Klientit",

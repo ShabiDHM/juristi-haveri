@@ -1,11 +1,11 @@
 // FILE: src/components/Header.tsx
-// PHOENIX PROTOCOL - HEADER V6.3 (LAW LIBRARY FOR ALL USERS)
+// PHOENIX PROTOCOL - HEADER V6.4 (ACCOUNTING THEME ICON)
 // 1. MODIFIED: Law Library link is now visible to all authenticated users.
 // 2. RETAINED: Admin Panel link remains restricted to admin role.
-// 3. STATUS: All users can access legal database.
+// 3. UPDATED: Changed 'Rastet' icon from Scale to Calculator for accountant branding.
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Search, LogOut, User as UserIcon, MessageSquare, Shield, Scale, FileText, Building2, Menu, X, BookOpen } from 'lucide-react';
+import { Bell, Search, LogOut, User as UserIcon, MessageSquare, Shield, FileText, Building2, Menu, X, BookOpen, Calculator } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, useLocation } from 'react-router-dom';
@@ -27,7 +27,7 @@ const Header: React.FC = () => {
   // BASE NAVIGATION (Visible to all authenticated users)
   const navItems = [
     { icon: Building2, label: t('sidebar.myOffice', 'Zyra'), path: '/business' },
-    { icon: Scale, label: t('sidebar.juristiAi', 'Rastet'), path: '/dashboard' },
+    { icon: Calculator, label: t('sidebar.juristiAi', 'Rastet'), path: '/dashboard' }, // Changed from Scale to Calculator
     { icon: FileText, label: t('sidebar.drafting', 'Hartimi'), path: '/drafting' },
     // Law Library – now visible to everyone
     { icon: BookOpen, label: t('sidebar.lawLibrary', 'Biblioteka Ligjore'), path: '/laws/search' },

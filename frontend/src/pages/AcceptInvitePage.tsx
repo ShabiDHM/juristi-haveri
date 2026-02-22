@@ -1,7 +1,8 @@
 // FILE: src/pages/AcceptInvitePage.tsx
-// PHOENIX PROTOCOL - INVITATION ACCEPTANCE V1.2 (I18N)
+// PHOENIX PROTOCOL - INVITATION ACCEPTANCE V1.3 (THEME ALIGNMENT)
 // 1. I18N: Replaced all hardcoded English strings with 't()' calls.
-// 2. STATUS: Fully translated.
+// 2. THEME: Changed success icon from emerald-400 to success-start.
+// 3. STATUS: Fully translated and theme‑consistent.
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -117,7 +118,7 @@ const AcceptInvitePage: React.FC = () => {
                         </>
                     ) : (
                         <div className="text-center">
-                            <CheckCircle size={48} className="mx-auto text-emerald-400 mb-4" />
+                            <CheckCircle size={48} className="mx-auto text-success-start mb-4" />
                             <h2 className="text-2xl font-bold text-white mb-2">{t('invite.successTitle')}</h2>
                             <p className="text-text-secondary mb-6">{t('invite.successMessage')}</p>
                             <p className="text-sm text-gray-500">{t('invite.redirecting')}</p>

@@ -1,7 +1,7 @@
 // FILE: src/pages/FinanceWizardPage.tsx
-// PHOENIX PROTOCOL - FINANCE WIZARD V13.0 (GLASS & GLOWS)
+// PHOENIX PROTOCOL - FINANCE WIZARD V13.1 (THEME ALIGNMENT)
 // 1. VISUALS: Full Glassmorphism adoption (glass-panel, glass-input).
-// 2. LAYOUT: Added ambient background glows and refined step indicators.
+// 2. THEME: All status colors mapped to theme variables (success-start, accent-start, secondary-start).
 // 3. UX: Enhanced data presentation with cleaner glass cards.
 
 import { useEffect, useState } from 'react';
@@ -56,7 +56,7 @@ const ATKBox = ({ number, label, value, currency }: { number: string, label: str
                 onClick={handleCopy}
                 className={`w-full sm:w-auto px-4 py-3 sm:p-3 rounded-lg transition-all flex items-center justify-center gap-2 ${
                     copied 
-                        ? 'bg-green-500/20 text-green-400 border border-green-500/50' 
+                        ? 'bg-success-start/20 text-success-start border border-success-start/50' 
                         : 'bg-white/5 text-gray-400 hover:bg-white/20 hover:text-white border border-transparent'
                 }`}
                 title={t('finance.wizard.atk.copy')}
@@ -117,12 +117,12 @@ const AuditStep = ({ issues }: { issues: AuditIssue[] }) => {
 
     if (issues.length === 0) {
         return (
-            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-8 text-center backdrop-blur-sm">
-                <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/10">
-                    <CheckCircle className="text-emerald-400" size={32} />
+            <div className="bg-success-start/10 border border-success-start/30 rounded-2xl p-8 text-center backdrop-blur-sm">
+                <div className="w-16 h-16 bg-success-start/20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-success-start/10">
+                    <CheckCircle className="text-success-start" size={32} />
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-white mb-2">{t('finance.wizard.cleanRecordTitle')}</h3>
-                <p className="text-sm sm:text-base text-emerald-200/70">{t('finance.wizard.cleanRecordDesc')}</p>
+                <p className="text-sm sm:text-base text-success-start/70">{t('finance.wizard.cleanRecordDesc')}</p>
             </div>
         );
     }
@@ -130,16 +130,16 @@ const AuditStep = ({ issues }: { issues: AuditIssue[] }) => {
     return (
         <div className="space-y-4">
             {critical.length > 0 && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-5 backdrop-blur-sm">
-                    <h3 className="flex items-center text-red-400 font-bold mb-4 text-sm sm:text-base">
+                <div className="bg-accent-start/10 border border-accent-start/20 rounded-xl p-5 backdrop-blur-sm">
+                    <h3 className="flex items-center text-accent-start font-bold mb-4 text-sm sm:text-base">
                         <ShieldAlert className="mr-2" size={20} />
                         {t('finance.wizard.criticalIssues')} ({critical.length})
-                        <span className="ml-auto text-xs bg-red-500/20 border border-red-500/20 px-2 py-1 rounded text-red-200">{t('finance.wizard.mustFix')}</span>
+                        <span className="ml-auto text-xs bg-accent-start/20 border border-accent-start/20 px-2 py-1 rounded text-accent-start/80">{t('finance.wizard.mustFix')}</span>
                     </h3>
                     <div className="space-y-2">
                         {critical.map(issue => (
                             <div key={issue.id} className="bg-black/40 border border-white/5 p-3 rounded-lg flex items-start">
-                                <span className="w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5 mr-2 flex-shrink-0 shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
+                                <span className="w-1.5 h-1.5 bg-accent-start rounded-full mt-1.5 mr-2 flex-shrink-0 shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
                                 <p className="text-xs sm:text-sm text-gray-300 break-words">{issue.message}</p>
                             </div>
                         ))}
@@ -148,16 +148,16 @@ const AuditStep = ({ issues }: { issues: AuditIssue[] }) => {
             )}
 
             {warnings.length > 0 && (
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-5 backdrop-blur-sm">
-                    <h3 className="flex items-center text-amber-400 font-bold mb-4 text-sm sm:text-base">
+                <div className="bg-secondary-start/10 border border-secondary-start/20 rounded-xl p-5 backdrop-blur-sm">
+                    <h3 className="flex items-center text-secondary-start font-bold mb-4 text-sm sm:text-base">
                         <AlertTriangle className="mr-2" size={20} />
                         {t('finance.wizard.warnings')} ({warnings.length})
-                        <span className="ml-auto text-xs bg-amber-500/20 border border-amber-500/20 px-2 py-1 rounded text-amber-200">{t('finance.wizard.recommended')}</span>
+                        <span className="ml-auto text-xs bg-secondary-start/20 border border-secondary-start/20 px-2 py-1 rounded text-secondary-start/80">{t('finance.wizard.recommended')}</span>
                     </h3>
                     <div className="space-y-2">
                         {warnings.map(issue => (
                             <div key={issue.id} className="bg-black/40 border border-white/5 p-3 rounded-lg flex items-start">
-                                <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-1.5 mr-2 flex-shrink-0 shadow-[0_0_5px_rgba(245,158,11,0.5)]" />
+                                <span className="w-1.5 h-1.5 bg-secondary-start rounded-full mt-1.5 mr-2 flex-shrink-0 shadow-[0_0_5px_rgba(245,158,11,0.5)]" />
                                 <p className="text-xs sm:text-sm text-gray-300 break-words">{issue.message}</p>
                             </div>
                         ))}
@@ -190,7 +190,7 @@ const TaxStep = ({ data }: { data: TaxCalculation }) => {
                     <p className="text-xs text-gray-400 mb-1 uppercase tracking-wider font-bold">{t('finance.wizard.totalSales')}</p>
                     <p className="text-2xl font-bold text-white font-mono">€{data.total_sales_gross.toFixed(2)}</p>
                     {!isSmallBusiness && (
-                        <div className="mt-2 text-xs text-emerald-400 flex items-center bg-emerald-500/10 w-fit px-2 py-1 rounded border border-emerald-500/20">
+                        <div className="mt-2 text-xs text-success-start flex items-center bg-success-start/10 w-fit px-2 py-1 rounded border border-success-start/20">
                             <span className="font-bold mr-2">{t('finance.wizard.vatCollected')}:</span>
                             €{data.vat_collected.toFixed(2)}
                         </div>
@@ -209,7 +209,7 @@ const TaxStep = ({ data }: { data: TaxCalculation }) => {
                     <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
                         <p className="text-xs text-gray-400 mb-1 uppercase tracking-wider font-bold">{t('finance.wizard.totalPurchases')}</p>
                         <p className="text-2xl font-bold text-white font-mono">€{data.total_purchases_gross.toFixed(2)}</p>
-                        <div className="mt-2 text-xs text-red-400 flex items-center bg-red-500/10 w-fit px-2 py-1 rounded border border-red-500/20">
+                        <div className="mt-2 text-xs text-accent-start flex items-center bg-accent-start/10 w-fit px-2 py-1 rounded border border-accent-start/20">
                             <span className="font-bold mr-2">{t('finance.wizard.vatDeductible')}:</span>
                             €{data.vat_deductible.toFixed(2)}
                         </div>
@@ -220,16 +220,16 @@ const TaxStep = ({ data }: { data: TaxCalculation }) => {
             {/* The Result Card */}
             <div className={`p-8 rounded-2xl border flex flex-col justify-center items-center text-center shadow-2xl backdrop-blur-md ${
                 isPayable 
-                    ? 'bg-red-500/10 border-red-500/30' 
-                    : 'bg-emerald-500/10 border-emerald-500/30'
+                    ? 'bg-accent-start/10 border-accent-start/30' 
+                    : 'bg-success-start/10 border-success-start/30'
             }`}>
                 <h3 className="text-lg font-medium text-gray-200 mb-4 opacity-80">
                     {data.description}
                 </h3>
-                <span className={`text-5xl font-bold mb-6 font-mono tracking-tight drop-shadow-lg ${isPayable ? 'text-red-400' : 'text-emerald-400'}`}>
+                <span className={`text-5xl font-bold mb-6 font-mono tracking-tight drop-shadow-lg ${isPayable ? 'text-accent-start' : 'text-success-start'}`}>
                     €{Math.abs(data.net_obligation).toFixed(2)}
                 </span>
-                <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${isPayable ? 'bg-red-500/20 border-red-500/30 text-red-200' : 'bg-emerald-500/20 border-emerald-500/30 text-emerald-200'}`}>
+                <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${isPayable ? 'bg-accent-start/20 border-accent-start/30 text-accent-start/80' : 'bg-success-start/20 border-success-start/30 text-success-start/80'}`}>
                     {isPayable ? t('finance.wizard.payable') : t('finance.wizard.receivable')}
                 </div>
             </div>
@@ -364,10 +364,10 @@ const FinanceWizardPage = () => {
                             </div>
                         ) : errorMsg ? (
                             <div className="flex flex-col items-center justify-center py-20 text-center glass-panel rounded-2xl p-8">
-                                <div className="bg-red-500/10 p-4 rounded-full mb-4 border border-red-500/20">
-                                    <AlertTriangle className="text-red-500 w-10 h-10" />
+                                <div className="bg-accent-start/10 p-4 rounded-full mb-4 border border-accent-start/20">
+                                    <AlertTriangle className="text-accent-start w-10 h-10" />
                                 </div>
-                                <p className="text-red-300 text-lg mb-4 font-medium">{errorMsg}</p>
+                                <p className="text-accent-start/80 text-lg mb-4 font-medium">{errorMsg}</p>
                                 <button onClick={fetchData} className="px-6 py-2 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors border border-white/5">
                                     {t('documentsPanel.reconnect')}
                                 </button>

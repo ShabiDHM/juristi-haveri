@@ -1,8 +1,8 @@
 // FILE: src/pages/CalendarPage.tsx
-// PHOENIX PROTOCOL - CALENDAR V21.0 (GLASSMORPHISM UNIFICATION)
+// PHOENIX PROTOCOL - CALENDAR V21.1 (THEME ALIGNMENT)
 // 1. REFACTOR: Replaced custom panel styles with standard glass utilities (glass-panel, glass-high, glass-input, glass-button).
-// 2. CONSISTENCY: Uses the same color variables (primary-start, secondary-start, accent-start) as CaseCard.
-// 3. UI: Preserved all existing functionality and animations.
+// 2. CONSISTENCY: Uses the same color variables (primary-start, secondary-start, accent-start, success-start) as CaseCard.
+// 3. UPDATED: Event type colors now use theme variables for a unified look.
 // 4. STATUS: 100% consistent with System Architectural Snapshot.
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -45,9 +45,9 @@ const getEventStyle = (type: string, category?: string) => {
       case 'DEADLINE': return { border: 'border-accent-start/30', bg: 'bg-accent-start/10 hover:bg-accent-start/20', text: 'text-accent-start', indicator: 'bg-accent-start', icon: <AlertTriangle size={12} className="text-accent-start" /> };
       case 'HEARING': return { border: 'border-secondary-start/30', bg: 'bg-secondary-start/10 hover:bg-secondary-start/20', text: 'text-secondary-start', indicator: 'bg-secondary-start', icon: <Gavel size={12} className="text-secondary-start" /> };
       case 'MEETING': return { border: 'border-primary-start/30', bg: 'bg-primary-start/10 hover:bg-primary-start/20', text: 'text-primary-start', indicator: 'bg-primary-start', icon: <Users size={12} className="text-primary-start" /> };
-      case 'FILING': return { border: 'border-amber-500/30', bg: 'bg-amber-500/10 hover:bg-amber-500/20', text: 'text-amber-400', indicator: 'bg-amber-500', icon: <FileText size={12} className="text-amber-400" /> };
-      case 'COURT_DATE': return { border: 'border-orange-500/30', bg: 'bg-orange-500/10 hover:bg-orange-500/20', text: 'text-orange-400', indicator: 'bg-orange-500', icon: <Scale size={12} className="text-orange-400" /> };
-      case 'CONSULTATION': return { border: 'border-emerald-500/30', bg: 'bg-emerald-500/10 hover:bg-emerald-500/20', text: 'text-emerald-400', indicator: 'bg-emerald-500', icon: <MessageSquare size={12} className="text-emerald-400" /> };
+      case 'FILING': return { border: 'border-secondary-start/30', bg: 'bg-secondary-start/10 hover:bg-secondary-start/20', text: 'text-secondary-start', indicator: 'bg-secondary-start', icon: <FileText size={12} className="text-secondary-start" /> };
+      case 'COURT_DATE': return { border: 'border-accent-start/30', bg: 'bg-accent-start/10 hover:bg-accent-start/20', text: 'text-accent-start', indicator: 'bg-accent-start', icon: <Scale size={12} className="text-accent-start" /> };
+      case 'CONSULTATION': return { border: 'border-success-start/30', bg: 'bg-success-start/10 hover:bg-success-start/20', text: 'text-success-start', indicator: 'bg-success-start', icon: <MessageSquare size={12} className="text-success-start" /> };
       default: return { border: 'border-white/10', bg: 'bg-white/5 hover:bg-white/10', text: 'text-text-secondary', indicator: 'bg-text-secondary', icon: <CalendarIcon size={12} className="text-text-secondary" /> };
     }
 };
@@ -127,7 +127,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ cases, existingEven
         <div className="fixed inset-0 bg-background-dark/60 backdrop-blur-xl flex items-center justify-center p-3 z-[2000]">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-high w-full max-w-lg max-h-[90vh] p-8 sm:p-10 rounded-[2.5rem] flex flex-col shadow-2xl overflow-hidden">
                 <h2 className="text-2xl font-bold text-text-primary mb-8 shrink-0 tracking-tight uppercase tracking-wider">{t('calendar.createModal.title')}</h2>
-                {conflictWarning && (<div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-6 flex items-center gap-4 animate-pulse"><ShieldAlert className="text-amber-400 h-5 w-5 shrink-0" /><span className="text-amber-200 text-xs font-bold">{conflictWarning}</span></div>)}
+                {conflictWarning && (
+                    <div className="bg-secondary-start/10 border border-secondary-start/20 rounded-xl p-4 mb-6 flex items-center gap-4 animate-pulse">
+                        <ShieldAlert className="text-secondary-start h-5 w-5 shrink-0" />
+                        <span className="text-secondary-start/80 text-xs font-bold">{conflictWarning}</span>
+                    </div>
+                )}
                 <form onSubmit={handleSubmit} className="flex flex-col flex-grow overflow-hidden">
                     <div className="overflow-y-auto pr-2 space-y-5 flex-grow custom-scrollbar">
                         <div><label className="block text-[11px] font-bold text-primary-start uppercase tracking-widest mb-2 ml-1">{t('calendar.createModal.relatedCase')}</label><select required value={formData.case_id} onChange={(e) => setFormData(prev => ({ ...prev, case_id: e.target.value }))} className="glass-input w-full px-4 py-3 rounded-xl"><option value="" className="bg-background-dark">Zgjidhni rastin...</option>{cases.map(c => <option key={c.id} value={c.id} className="bg-background-dark">{c.title || c.case_number}</option>)}</select></div>
@@ -138,7 +143,15 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ cases, existingEven
                         </div>
                         <div><label className="block text-[11px] font-bold text-primary-start uppercase tracking-widest mb-2 ml-1">Data</label><DatePicker selected={eventDate} onChange={(date: Date | null) => setEventDate(date)} locale={currentLocale} dateFormat="dd.MM.yyyy" placeholderText="Klikoni për datën" className="glass-input w-full px-4 py-3 rounded-xl" portalId="react-datepicker-portal" required /></div>
                         
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between cursor-pointer" onClick={() => setIsPublic(!isPublic)}><div className="flex items-center gap-4"><div className={`p-3 rounded-xl transition-colors ${isPublic ? 'bg-primary-start text-white' : 'bg-white/10 text-text-secondary'}`}>{isPublic ? <Eye size={18} /> : <EyeOff size={18} />}</div><div><h4 className={`text-sm font-bold ${isPublic ? 'text-primary-start' : 'text-text-secondary'}`}>{isPublic ? 'Publike' : 'Private'}</h4><p className="text-[10px] text-text-secondary/50 uppercase tracking-widest">Për klientin</p></div></div><div className={`w-10 h-5 rounded-full relative transition-colors ${isPublic ? 'bg-primary-start' : 'bg-gray-700'}`}><div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${isPublic ? 'translate-x-5' : 'translate-x-0'}`} /></div></div>
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between cursor-pointer" onClick={() => setIsPublic(!isPublic)}>
+                            <div className="flex items-center gap-4">
+                                <div className={`p-3 rounded-xl transition-colors ${isPublic ? 'bg-primary-start text-white' : 'bg-white/10 text-text-secondary'}`}>{isPublic ? <Eye size={18} /> : <EyeOff size={18} />}</div>
+                                <div><h4 className={`text-sm font-bold ${isPublic ? 'text-primary-start' : 'text-text-secondary'}`}>{isPublic ? 'Publike' : 'Private'}</h4><p className="text-[10px] text-text-secondary/50 uppercase tracking-widest">Për klientin</p></div>
+                            </div>
+                            <div className={`w-10 h-5 rounded-full relative transition-colors ${isPublic ? 'bg-primary-start' : 'bg-gray-700'}`}>
+                                <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${isPublic ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </div>
+                        </div>
 
                         {!showAdvanced && (
                             <button type="button" onClick={() => setShowAdvanced(true)} className="w-full text-[11px] font-bold text-text-secondary uppercase flex items-center justify-center gap-2 py-3 hover:text-white transition-all">
@@ -220,7 +233,7 @@ const CalendarPage: React.FC = () => {
                                     <h4 className="text-base font-bold text-text-primary group-hover:text-primary-start transition-colors truncate">{event.title}</h4>
                                     <div className="flex items-center gap-3 mt-2">
                                         <span className={`text-[10px] px-2 py-0.5 rounded-full border ${style.border} ${style.bg} ${style.text} font-black uppercase tracking-widest`}>{t(`calendar.types.${event.event_type}`)}</span>
-                                        {isShared && <Eye size={12} className="text-emerald-500" />}
+                                        {isShared && <Eye size={12} className="text-success-start" />}
                                         {event.description && <span className="text-xs text-text-secondary truncate italic">{event.description}</span>}
                                     </div>
                                 </div>

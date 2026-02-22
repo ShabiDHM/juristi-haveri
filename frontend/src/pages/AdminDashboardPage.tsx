@@ -1,6 +1,9 @@
 // FILE: src/pages/AdminDashboardPage.tsx
-// PHOENIX PROTOCOL - ADMIN DASHBOARD V14.1 (ADDED ROLE MANAGEMENT)
-// ... (rest of header comments)
+// PHOENIX PROTOCOL - ADMIN DASHBOARD V14.2 (THEME ALIGNMENT)
+// 1. UPDATED: All hardcoded colors replaced with theme variables.
+// 2. MAINTAINED: Full Feature Tier (BASIC/PRO) and Capacity (1/10 Seats) logic.
+// 3. ADDED: Role dropdown in user edit form to promote/demote users.
+// 4. STATUS: Production Ready & Fully Internationalized.
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -23,7 +26,6 @@ type UnifiedAdminUser = User & {
     user_limit?: number;
 };
 
-// Type alias for the allowed role values (matches the User interface)
 type UserRole = 'ADMIN' | 'LAWYER' | 'CLIENT' | 'STANDARD';
 
 const AdminDashboardPage: React.FC = () => {
@@ -32,7 +34,6 @@ const AdminDashboardPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [editingUser, setEditingUser] = useState<UnifiedAdminUser | null>(null);
-
     const [editForm, setEditForm] = useState<Partial<UnifiedAdminUser> & { expiry_date?: Date | null }>({});
 
     useEffect(() => {
@@ -84,7 +85,7 @@ const AdminDashboardPage: React.FC = () => {
             const userUpdatePayload: UpdateUserRequest = {
                 username: editForm.username,
                 email: editForm.email,
-                role: editForm.role, // Now properly typed due to cast in onChange
+                role: editForm.role,
                 status: editForm.status,
                 account_type: editForm.account_type,
                 subscription_tier: editForm.subscription_tier,
@@ -124,15 +125,15 @@ const AdminDashboardPage: React.FC = () => {
         const isExpired = user.expiry_date && user.expiry_date < new Date();
 
         if (user.status === 'pending_invite') {
-            return <span className="flex items-center text-amber-400 bg-amber-400/10 px-2 py-1 rounded-lg text-xs font-bold w-fit border border-amber-500/20"><Mail className="w-3 h-3 mr-1" /> {t('admin.status.invite_pending', 'FTESË')}</span>;
+            return <span className="flex items-center text-secondary-start bg-secondary-start/10 px-2 py-1 rounded-lg text-xs font-bold w-fit border border-secondary-start/20"><Mail className="w-3 h-3 mr-1" /> {t('admin.status.invite_pending', 'FTESË')}</span>;
         }
         if (user.subscription_status === 'ACTIVE') {
             if (isExpired) {
                 return <span className="flex items-center text-red-400 bg-red-400/10 px-2 py-1 rounded-lg text-xs font-bold w-fit border border-red-500/20"><AlertTriangle className="w-3 h-3 mr-1" /> {t('admin.status.expired', 'SKADUAR')}</span>;
             }
-            return <span className="flex items-center text-green-400 bg-green-400/10 px-2 py-1 rounded-lg text-xs font-bold w-fit border border-green-500/20"><CheckCircle className="w-3 h-3 mr-1" /> {t('admin.status.active', 'AKTIV')}</span>;
+            return <span className="flex items-center text-success-start bg-success-start/10 px-2 py-1 rounded-lg text-xs font-bold w-fit border border-success-start/20"><CheckCircle className="w-3 h-3 mr-1" /> {t('admin.status.active', 'AKTIV')}</span>;
         }
-        return <span className="flex items-center text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded-lg text-xs font-bold w-fit border border-yellow-500/20"><Clock className="w-3 h-3 mr-1" /> {t('admin.status.pending', 'PRITJE')}</span>;
+        return <span className="flex items-center text-secondary-start bg-secondary-start/10 px-2 py-1 rounded-lg text-xs font-bold w-fit border border-secondary-start/20"><Clock className="w-3 h-3 mr-1" /> {t('admin.status.pending', 'PRITJE')}</span>;
     };
 
     const filteredUsers = users.filter(u =>
@@ -147,7 +148,7 @@ const AdminDashboardPage: React.FC = () => {
             <style>{`.dark-select { color-scheme: dark; } .react-datepicker-wrapper { width: 100%; }`}</style>
             
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-white mb-2">{t('admin.dashboard_title', 'Administrimi i Juristi.tech')}</h1>
+                <h1 className="text-3xl font-bold text-white mb-2">{t('admin.dashboard_title', 'Administrimi i Kontabilisti AI')}</h1>
                 <p className="text-gray-400">{t('admin.dashboard_subtitle', 'Menaxhimi i Funksioneve dhe Kapacitetit')}</p>
             </div>
 
@@ -183,12 +184,12 @@ const AdminDashboardPage: React.FC = () => {
                                         <div className="text-xs text-gray-500">{user.email}</div>
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        {user.account_type === AccountType.ORGANIZATION ? <Building2 className="w-4 h-4 text-purple-400 mx-auto" /> : <UserIcon className="w-4 h-4 text-gray-500 mx-auto" />}
+                                        {user.account_type === AccountType.ORGANIZATION ? <Building2 className="w-4 h-4 text-secondary-start mx-auto" /> : <UserIcon className="w-4 h-4 text-gray-500 mx-auto" />}
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2">
-                                            {user.subscription_tier === SubscriptionTier.PRO ? <Zap className="w-3 h-3 text-yellow-400" /> : <Shield className="w-3 h-3 text-gray-500" />}
-                                            <span className={`text-xs font-bold uppercase ${user.subscription_tier === SubscriptionTier.PRO ? 'text-yellow-400' : 'text-gray-400'}`}>
+                                            {user.subscription_tier === SubscriptionTier.PRO ? <Zap className="w-3 h-3 text-accent-start" /> : <Shield className="w-3 h-3 text-gray-500" />}
+                                            <span className={`text-xs font-bold uppercase ${user.subscription_tier === SubscriptionTier.PRO ? 'text-accent-start' : 'text-gray-400'}`}>
                                                 {user.subscription_tier}
                                             </span>
                                         </div>
@@ -196,8 +197,8 @@ const AdminDashboardPage: React.FC = () => {
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2">
-                                                {user.product_plan === ProductPlan.TEAM_PLAN ? <Star className="w-3 h-3 text-amber-400" /> : <UserIcon className="w-3 h-3 text-gray-500" />}
-                                                <span className={`text-xs font-bold ${user.product_plan === ProductPlan.TEAM_PLAN ? 'text-amber-400' : 'text-gray-400'}`}>
+                                                {user.product_plan === ProductPlan.TEAM_PLAN ? <Star className="w-3 h-3 text-secondary-start" /> : <UserIcon className="w-3 h-3 text-gray-500" />}
+                                                <span className={`text-xs font-bold ${user.product_plan === ProductPlan.TEAM_PLAN ? 'text-secondary-start' : 'text-gray-400'}`}>
                                                     {user.product_plan} ({user.user_limit} {t('admin.seats', 'Vende')})
                                                 </span>
                                             </div>
@@ -210,7 +211,7 @@ const AdminDashboardPage: React.FC = () => {
                                     </td>
                                     <td className="px-6 py-4">{renderStatusBadge(user)}</td>
                                     <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                                        <button onClick={() => handleEditClick(user)} className="p-2 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/20"><Edit2 className="w-4 h-4" /></button>
+                                        <button onClick={() => handleEditClick(user)} className="p-2 bg-primary-start/10 text-primary-start rounded-lg border border-primary-start/20"><Edit2 className="w-4 h-4" /></button>
                                         <button onClick={() => handleDeleteUser(user.id)} className="p-2 bg-red-500/10 text-red-400 rounded-lg border border-red-500/20"><Trash2 className="w-4 h-4" /></button>
                                     </td>
                                 </tr>
@@ -227,15 +228,15 @@ const AdminDashboardPage: React.FC = () => {
                         <form onSubmit={handleUpdateUser} className="space-y-6">
                             
                             {/* Role Management Section */}
-                            <div className="p-4 bg-indigo-500/5 rounded-xl border border-indigo-500/20 space-y-4">
-                                <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-widest flex items-center gap-2"><Key size={14}/> {t('admin.section_role', 'Roli i Përdoruesit')}</h4>
+                            <div className="p-4 bg-primary-start/5 rounded-xl border border-primary-start/20 space-y-4">
+                                <h4 className="text-xs font-bold text-primary-start uppercase tracking-widest flex items-center gap-2"><Key size={14}/> {t('admin.section_role', 'Roli i Përdoruesit')}</h4>
                                 <div>
                                     <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('admin.label_role', 'Roli')}</label>
                                     <select 
                                         value={editForm.role || 'STANDARD'} 
                                         onChange={e => setEditForm({ 
                                             ...editForm, 
-                                            role: e.target.value as UserRole // Type assertion to fix TypeScript error
+                                            role: e.target.value as UserRole
                                         })} 
                                         className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none dark-select"
                                     >
@@ -245,8 +246,8 @@ const AdminDashboardPage: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="p-4 bg-yellow-500/5 rounded-xl border border-yellow-500/20 space-y-4">
-                                <h4 className="text-xs font-bold text-yellow-400 uppercase tracking-widest flex items-center gap-2"><Zap size={14}/> {t('admin.section_features_ai', 'Funksionet & Aksesi AI')}</h4>
+                            <div className="p-4 bg-secondary-start/5 rounded-xl border border-secondary-start/20 space-y-4">
+                                <h4 className="text-xs font-bold text-secondary-start uppercase tracking-widest flex items-center gap-2"><Zap size={14}/> {t('admin.section_features_ai', 'Funksionet & Aksesi AI')}</h4>
                                 <div>
                                     <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('admin.label_subscription_tier', 'Niveli i Abonimit')}</label>
                                     <select value={editForm.subscription_tier} onChange={e => setEditForm({ ...editForm, subscription_tier: e.target.value as SubscriptionTier })} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none dark-select">
@@ -256,8 +257,8 @@ const AdminDashboardPage: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="p-4 bg-emerald-500/5 rounded-xl border border-emerald-500/20 space-y-4">
-                                <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-2"><Star size={14}/> {t('admin.section_capacity_quotas', 'Kapaciteti & Kuotat')}</h4>
+                            <div className="p-4 bg-success-start/5 rounded-xl border border-success-start/20 space-y-4">
+                                <h4 className="text-xs font-bold text-success-start uppercase tracking-widest flex items-center gap-2"><Star size={14}/> {t('admin.section_capacity_quotas', 'Kapaciteti & Kuotat')}</h4>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('admin.label_product_plan', 'Plani i Produktit')}</label>
@@ -277,7 +278,7 @@ const AdminDashboardPage: React.FC = () => {
                             </div>
 
                             <div className="p-4 bg-white/5 rounded-xl border border-white/10 space-y-4">
-                                <h4 className="text-xs font-bold text-primary-300 uppercase tracking-widest flex items-center gap-2"><Clock size={14}/> {t('admin.section_lifecycle_status', 'Cikli i Jetës & Statusi')}</h4>
+                                <h4 className="text-xs font-bold text-primary-start/80 uppercase tracking-widest flex items-center gap-2"><Clock size={14}/> {t('admin.section_lifecycle_status', 'Cikli i Jetës & Statusi')}</h4>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('admin.label_gatekeeper_status', 'Statusi i Gatekeeper')}</label>

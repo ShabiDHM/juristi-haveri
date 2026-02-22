@@ -1,5 +1,6 @@
 // FILE: src/pages/LawViewerPage.tsx
 // PHOENIX PROTOCOL - ENHANCED LAW VIEWER (PROFESSIONAL PRESENTATION)
+// THEME: Updated error panel to use accent-start, loading spinner to use primary-start.
 
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -48,9 +49,9 @@ export default function LawViewerPage() {
   if (error) {
     return (
       <div className="max-w-4xl mx-auto p-6">
-        <div className="glass-panel border border-red-500/30 bg-red-500/10 p-8 rounded-2xl flex flex-col items-center gap-4">
-          <div className="text-red-500 text-5xl mb-2">⚠️</div>
-          <p className="text-red-200 text-center">{error}</p>
+        <div className="glass-panel border border-accent-start/30 bg-accent-start/10 p-8 rounded-2xl flex flex-col items-center gap-4">
+          <div className="text-accent-start text-5xl mb-2">⚠️</div>
+          <p className="text-accent-start/80 text-center">{error}</p>
           <button
             onClick={() => navigate('/laws/search')}
             className="mt-4 px-6 py-2 bg-primary-start text-white rounded-lg hover:bg-primary-end transition-colors"

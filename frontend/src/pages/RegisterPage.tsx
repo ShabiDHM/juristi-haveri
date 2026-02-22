@@ -1,7 +1,7 @@
 // FILE: src/pages/RegisterPage.tsx
-// PHOENIX PROTOCOL - REGISTER PAGE V3.0 (GLASS STYLE)
+// PHOENIX PROTOCOL - REGISTER PAGE V3.1 (THEME ALIGNMENT)
 // 1. VISUALS: Full Glassmorphism adoption (glass-high, glass-input).
-// 2. LAYOUT: Ambient background and consistent spacing.
+// 2. THEME: Updated success state and error messages to use theme variables.
 // 3. MESSAGING: Retained inspirational messaging for the success state.
 
 import React, { useState } from 'react';
@@ -68,13 +68,13 @@ const RegisterPage: React.FC = () => {
         <div className="min-h-screen flex items-center justify-center bg-background-dark px-4 relative overflow-hidden font-sans selection:bg-primary-start/30">
             {/* Ambient Background */}
             <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-emerald-500/20 rounded-full blur-[100px] opacity-40 animate-pulse-slow"></div>
+                <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-success-start/20 rounded-full blur-[100px] opacity-40 animate-pulse-slow"></div>
                 <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary-start/20 rounded-full blur-[100px] opacity-30 animate-pulse-slow delay-1000"></div>
             </div>
 
             <div className="glass-high max-w-md w-full p-10 rounded-3xl border border-white/10 text-center shadow-2xl relative z-10 animate-in fade-in zoom-in-95 duration-500">
-                <div className="w-24 h-24 bg-gradient-to-br from-emerald-400/20 to-emerald-600/20 rounded-full flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(52,211,153,0.3)] ring-1 ring-emerald-500/30">
-                    <Sparkles className="w-12 h-12 text-emerald-400" />
+                <div className="w-24 h-24 bg-gradient-to-br from-success-start/20 to-success-end/20 rounded-full flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(16,185,129,0.3)] ring-1 ring-success-start/30">
+                    <Sparkles className="w-12 h-12 text-success-start" />
                 </div>
                 
                 <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">
@@ -85,7 +85,7 @@ const RegisterPage: React.FC = () => {
                     {t('auth.welcomeMessage', 'Llogaria juaj është krijuar. Ndërsa ekipi ynë verifikon të dhënat, ju jeni një hap më afër bashkimit të ekspertizës njerëzore me fuqinë e të dhënave për të transformuar praktikën tuaj ligjore.')}
                 </p>
                 
-                <Link to="/login" className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-1">
+                <Link to="/login" className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-success-start to-success-end hover:from-success-start/90 hover:to-success-end/90 text-white rounded-xl font-bold transition-all shadow-lg shadow-success-start/20 hover:shadow-success-start/40 hover:-translate-y-1">
                     {t('auth.backToLogin', 'Kthehu te Kyçja')} <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
             </div>
@@ -157,7 +157,7 @@ const RegisterPage: React.FC = () => {
             </div>
             
             {error && (
-                <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-300 text-sm font-medium">
+                <div className="flex items-start gap-3 bg-accent-start/10 border border-accent-start/20 rounded-xl p-3 text-accent-start text-sm font-medium">
                     <ShieldAlert className="w-5 h-5 shrink-0" />
                     <span>{error}</span>
                 </div>
@@ -181,7 +181,7 @@ const RegisterPage: React.FC = () => {
 
         <div className="mt-6 text-center text-sm text-gray-400">
             {t('auth.hasAccount')}{' '}
-            <Link to="/login" className="text-primary-300 hover:text-white font-bold hover:underline transition-colors">
+            <Link to="/login" className="text-primary-start hover:text-white font-bold hover:underline transition-colors">
                 {t('auth.signInLink')}
             </Link>
         </div>

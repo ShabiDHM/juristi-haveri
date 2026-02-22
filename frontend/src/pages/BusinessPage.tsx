@@ -1,8 +1,8 @@
 // FILE: src/pages/BusinessPage.tsx
-// PHOENIX PROTOCOL - BUSINESS PAGE V11.2 (i18n FIX)
+// PHOENIX PROTOCOL - BUSINESS PAGE V11.3 (THEME ALIGNMENT)
 // 1. FIXED: Corrected 'welcome' translation key to use 'general.welcome_name'.
 // 2. FIXED: Removed hardcoded English fallbacks in tab buttons.
-
+// 3. THEME: Active tab gradient now uses primary-start/end (teal/emerald).
 
 import React, { useState } from 'react';
 import { Building2, FileText, FolderOpen, Users } from 'lucide-react';

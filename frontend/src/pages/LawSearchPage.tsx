@@ -1,6 +1,7 @@
 // FILE: src/pages/LawSearchPage.tsx
 // PHOENIX PROTOCOL - ENHANCED SEARCH WITH LAW DROPDOWN
 // FINAL: Removed subtitle paragraph as requested.
+// THEME: Updated error colors to use accent-start.
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -324,9 +325,9 @@ export default function LawSearchPage() {
       )}
 
       {error && (
-        <div className="glass-panel border border-red-500/30 bg-red-500/10 p-6 rounded-2xl flex items-start gap-4">
-          <AlertCircle className="h-6 w-6 text-red-500 shrink-0" />
-          <p className="text-red-200 text-sm">{error}</p>
+        <div className="glass-panel border border-accent-start/30 bg-accent-start/10 p-6 rounded-2xl flex items-start gap-4">
+          <AlertCircle className="h-6 w-6 text-accent-start shrink-0" />
+          <p className="text-accent-start/80 text-sm">{error}</p>
         </div>
       )}
 

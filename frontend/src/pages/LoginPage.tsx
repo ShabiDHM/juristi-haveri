@@ -1,8 +1,9 @@
 // FILE: src/pages/LoginPage.tsx
-// PHOENIX PROTOCOL - LOGIN PAGE V3.0 (GLASS STYLE)
+// PHOENIX PROTOCOL - LOGIN PAGE V3.1 (THEME ALIGNMENT)
 // 1. VISUALS: Applied 'glass-high' for the form container and 'glass-input' for fields.
 // 2. LAYOUT: Added ambient background glows for visual depth.
-// 3. LOGIC: Preserved all authentication, error handling, and redirection logic.
+// 3. THEME: Error message now uses accent-start for consistent error presentation.
+// 4. LOGIC: Preserved all authentication, error handling, and redirection logic.
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -100,7 +101,7 @@ const LoginPage: React.FC = () => {
           </div>
 
           {error && (
-            <div className="text-red-300 text-sm text-center bg-red-500/10 p-3 rounded-xl border border-red-500/20 font-medium">
+            <div className="text-accent-start text-sm text-center bg-accent-start/10 p-3 rounded-xl border border-accent-start/20 font-medium">
                 {error}
             </div>
           )}

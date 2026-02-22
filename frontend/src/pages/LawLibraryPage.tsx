@@ -1,8 +1,9 @@
 // FILE: src/pages/LawLibraryPage.tsx
-// PHOENIX PROTOCOL - AUTHENTICATED SEARCH V1.2 (SESSION VALIDATION)
+// PHOENIX PROTOCOL - AUTHENTICATED SEARCH V1.3 (THEME ALIGNMENT)
 // 1. ADDED: useAuth check to ensure search only proceeds if isAuthenticated is true.
 // 2. FIXED: Improved error handling for 401 Unauthorized cases.
-// 3. STATUS: Protocol Compliant.
+// 3. THEME: Replaced hardcoded Tailwind colors with theme variables (primary-start, secondary-start, accent-start).
+// 4. STATUS: Protocol Compliant.
 
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -64,7 +65,7 @@ export default function LawLibraryPage() {
   if (isLoading) {
     return (
         <div className="flex items-center justify-center min-h-[400px]">
-            <Loader2 className="animate-spin text-indigo-600 w-8 h-8" />
+            <Loader2 className="animate-spin text-primary-start w-8 h-8" />
         </div>
     );
   }
@@ -73,7 +74,7 @@ export default function LawLibraryPage() {
     <div className="max-w-4xl mx-auto p-6">
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-          <Search className="text-indigo-600" />
+          <Search className="text-primary-start" />
           Biblioteka Ligjore
         </h1>
         <p className="text-gray-600 mt-2">
@@ -82,10 +83,10 @@ export default function LawLibraryPage() {
       </header>
       
       {!isAuthenticated && (
-          <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-400 text-amber-800 flex items-center gap-3">
+          <div className="mb-6 p-4 bg-secondary-start/10 border-l-4 border-secondary-start/40 text-secondary-start/80 flex items-center gap-3">
               <AlertCircle size={20} />
               <p>Ju duhet të <strong>hyni në llogari</strong> për të kryer kërkime në bibliotekë.</p>
-              <Link to="/login" className="ml-auto font-bold underline hover:text-amber-900">Hyni këtu</Link>
+              <Link to="/login" className="ml-auto font-bold underline hover:text-secondary-start transition-colors">Hyni këtu</Link>
           </div>
       )}
 
@@ -97,19 +98,19 @@ export default function LawLibraryPage() {
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
           placeholder="p.sh. Kodi Civil, Neni 45, Ligji për punën..."
           disabled={!isAuthenticated}
-          className="flex-1 p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          className="flex-1 p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-primary-start bg-white text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
         />
         <button
           onClick={handleSearch}
           disabled={loading || !isAuthenticated}
-          className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-all shadow-md disabled:opacity-50"
+          className="px-6 py-3 bg-primary-start text-white font-semibold rounded-lg hover:bg-primary-end transition-all shadow-md disabled:opacity-50"
         >
           {loading ? 'Duke kërkuar...' : 'Kërko'}
         </button>
       </div>
 
       {error && (
-        <div className="p-4 mb-6 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center gap-2">
+        <div className="p-4 mb-6 bg-accent-start/10 border border-accent-start/20 text-accent-start/80 rounded-lg flex items-center gap-2">
           <AlertCircle size={18} />
           {error}
         </div>
@@ -120,13 +121,13 @@ export default function LawLibraryPage() {
           <Link
             key={r.chunk_id}
             to={`/laws/${r.chunk_id}`}
-            className="block p-5 border border-gray-200 rounded-xl hover:shadow-lg hover:border-indigo-300 transition-all bg-white group"
+            className="block p-5 border border-gray-200 rounded-xl hover:shadow-lg hover:border-primary-start/40 transition-all bg-white group"
           >
-            <h2 className="text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
+            <h2 className="text-xl font-bold text-gray-900 group-hover:text-primary-start transition-colors">
                 {r.law_title}
             </h2>
             {r.article_number && (
-              <p className="text-indigo-700 font-medium mt-1">Neni {r.article_number}</p>
+              <p className="text-primary-start font-medium mt-1">Neni {r.article_number}</p>
             )}
             <p className="text-sm text-gray-500 mt-3 flex items-center gap-1">
                 <span className="font-semibold uppercase text-xs bg-gray-100 px-2 py-0.5 rounded">Burimi</span>

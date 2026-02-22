@@ -1,7 +1,7 @@
 // FILE: src/pages/ClientPortalPage.tsx
-// PHOENIX PROTOCOL - CLIENT PORTAL V7.1 (TAB COUNT RESTORATION)
+// PHOENIX PROTOCOL - CLIENT PORTAL V7.2 (THEME ALIGNMENT)
 // 1. FIX: Restored document count badge to the 'Skedarët' tab button.
-// 2. UI: Maintained mobile responsiveness and touch-optimized targets.
+// 2. UI: Replaced hardcoded colors with theme variables (primary-start, secondary-start, accent-start, success-start).
 // 3. INTEGRITY: Standardized icon mapping and TS6133 compliance.
 
 import React, { useEffect, useState } from 'react';
@@ -86,9 +86,9 @@ const ClientPortalPage: React.FC = () => {
 
     const getEventIcon = (type: string) => {
         const typeKey = type.toUpperCase();
-        if (typeKey === 'DEADLINE') return <AlertCircle size={14} className="text-rose-400" />;
-        if (typeKey === 'HEARING') return <Gavel size={14} className="text-purple-400" />;
-        if (typeKey === 'MEETING') return <Users size={14} className="text-blue-400" />;
+        if (typeKey === 'DEADLINE') return <AlertCircle size={14} className="text-accent-start" />;
+        if (typeKey === 'HEARING') return <Gavel size={14} className="text-secondary-start" />;
+        if (typeKey === 'MEETING') return <Users size={14} className="text-primary-start" />;
         return <Calendar size={14} className="text-gray-400" />;
     };
 
@@ -130,7 +130,7 @@ const ClientPortalPage: React.FC = () => {
                         )}
                         <span className="font-bold text-xs sm:text-sm truncate max-w-[150px]">{data.organization_name || t('branding.fallback', 'Zyra Ligjore')}</span>
                     </div>
-                    <div className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1.5">
+                    <div className="text-[10px] font-bold text-success-start bg-success-start/10 px-2.5 py-1 rounded-full border border-success-start/20 flex items-center gap-1.5">
                         <ShieldCheck size={12} /> {t('portal.secure_connection', 'Sigurt')}
                     </div>
                 </div>
@@ -139,7 +139,7 @@ const ClientPortalPage: React.FC = () => {
             <main className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 relative z-10">
                 {/* Hero Panel */}
                 <div className="glass-panel p-6 sm:p-8 rounded-2xl bg-white/5 border border-white/5 mb-6 shadow-2xl">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-blue-400 mb-1">{data.title}</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-primary-start mb-1">{data.title}</h1>
                     <p className="text-gray-400 text-[10px] sm:text-sm mb-6">
                         {t('portal.created_at', 'Krijuar më')}: {new Date(data.created_at || Date.now()).toLocaleDateString(t('locale.date', 'sq-AL'))}
                     </p>
@@ -183,7 +183,7 @@ const ClientPortalPage: React.FC = () => {
                         {t('portal.documents', 'Skedarët')}
                         {documents.length > 0 && (
                             <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold transition-colors ${
-                                activeTab === 'documents' ? 'bg-blue-500/10 text-blue-600' : 'bg-white/10 text-white'
+                                activeTab === 'documents' ? 'bg-primary-start/10 text-primary-start' : 'bg-white/10 text-white'
                             }`}>
                                 {documents.length}
                             </span>
@@ -230,7 +230,7 @@ const ClientPortalPage: React.FC = () => {
                                 documents.map((doc, i) => (
                                     <div key={i} className="glass-panel p-3 rounded-xl flex items-center justify-between bg-white/5 border border-white/5 hover:bg-white/10 transition-all">
                                         <div className="flex items-center gap-3 min-w-0">
-                                            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 shrink-0">
+                                            <div className="w-10 h-10 rounded-lg bg-primary-start/10 flex items-center justify-center text-primary-start shrink-0">
                                                 <FileText size={18} />
                                             </div>
                                             <div className="min-w-0">

@@ -211,7 +211,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
                 <div>
                     <div className="flex justify-between mb-1">
                         <label className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">{t('drafting.caseLabel')}</label>
-                        {!isPro && <span className="text-[9px] text-amber-500 font-bold bg-amber-500/10 px-1.5 rounded border border-amber-500/20 flex items-center gap-1"><Lock size={8}/> PRO</span>}
+                        {!isPro && <span className="text-[9px] text-secondary-start font-bold bg-secondary-start/10 px-1.5 rounded border border-secondary-start/20 flex items-center gap-1"><Lock size={8}/> PRO</span>}
                     </div>
                     <div className="relative">
                         <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -275,9 +275,9 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
 const ResultPanel: React.FC<ResultPanelProps> = ({ t, currentJob, saving, notification, onSave, onClear }) => {
     const statusUI = useMemo(() => {
         switch(currentJob.status) {
-            case 'COMPLETED': return { text: t('drafting.statusCompleted'), color: 'text-green-400', icon: <CheckCircle className="h-5 w-5" /> };
-            case 'FAILED': return { text: t('drafting.statusFailed'), color: 'text-red-400', icon: <AlertCircle className="h-5 w-5" /> };
-            case 'PROCESSING': return { text: t('drafting.statusWorking'), color: 'text-yellow-400', icon: <Clock className="h-5 w-5 animate-pulse" /> };
+            case 'COMPLETED': return { text: t('drafting.statusCompleted'), color: 'text-success-start', icon: <CheckCircle className="h-5 w-5" /> };
+            case 'FAILED': return { text: t('drafting.statusFailed'), color: 'text-accent-start', icon: <AlertCircle className="h-5 w-5" /> };
+            case 'PROCESSING': return { text: t('drafting.statusWorking'), color: 'text-secondary-start', icon: <Clock className="h-5 w-5 animate-pulse" /> };
             default: return { text: t('drafting.statusResult'), color: 'text-white', icon: <Scale className="h-5 w-5 text-gray-500" /> };
         }
     }, [currentJob.status, t]);
@@ -299,7 +299,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ t, currentJob, saving, notifi
                     <button onClick={() => { if(currentJob.result) { const blob = new Blob([currentJob.result], { type: 'text/plain' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `draft-${Date.now()}.txt`; a.click(); } }} title={t('drafting.download')} className="p-2.5 bg-white/5 hover:bg-white/10 rounded-lg text-gray-300 transition-colors">
                         <Download size={18}/>
                     </button>
-                    <button onClick={onClear} title={t('drafting.clear')} className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"><Trash2 size={18}/></button>
+                    <button onClick={onClear} title={t('drafting.clear')} className="p-2.5 bg-accent-start/10 hover:bg-accent-start/20 text-accent-start rounded-lg transition-colors"><Trash2 size={18}/></button>
                 </div>
             </div>
             <div className="flex-1 bg-gray-900/40 overflow-y-auto relative custom-scrollbar">
@@ -308,7 +308,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ t, currentJob, saving, notifi
                         {currentJob.result ? (
                             <motion.div key="result" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="w-full max-w-[21cm]">
                                 {notification && (
-                                    <div className={`mb-4 p-3 text-xs rounded-lg flex items-center gap-2 border w-full ${notification.type === 'success' ? 'bg-green-500/20 text-green-400 border-green-500/20' : 'bg-red-500/20 text-red-400 border-red-500/20'}`}>
+                                    <div className={`mb-4 p-3 text-xs rounded-lg flex items-center gap-2 border w-full ${notification.type === 'success' ? 'bg-success-start/20 text-success-start border-success-start/20' : 'bg-accent-start/20 text-accent-start border-accent-start/20'}`}>
                                         {notification.type === 'success' ? <CheckCircle size={14}/> : <AlertCircle size={14}/>} {notification.msg}
                                     </div>
                                 )}

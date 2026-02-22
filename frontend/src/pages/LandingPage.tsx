@@ -1,8 +1,8 @@
 // FILE: src/pages/LandingPage.tsx
-// PHOENIX PROTOCOL - LANDING V8.0 (CLEAN HERO)
+// PHOENIX PROTOCOL - LANDING V8.1 (THEME ALIGNMENT)
 // 1. MODIFIED: Removed the version badge pill (BrainCircuit + landing.versionBadge).
 // 2. CLEANUP: Removed unused BrainCircuit import from lucide-react.
-// 3. STATUS: Visual Alignment Complete.
+// 3. THEME: Replaced hardcoded Tailwind shades (text-primary-300) with theme variables.
 
 import React from 'react';
 import { Link } from 'react-router-dom';
@@ -31,7 +31,7 @@ const LandingPage: React.FC = () => {
       <nav className="relative z-50 px-6 py-6 max-w-7xl mx-auto flex justify-between items-center">
         <BrandLogo />
         <div className="flex gap-4">
-            <Link to="/login" className="px-6 py-2.5 text-sm font-bold text-white hover:text-primary-300 transition-colors">
+            <Link to="/login" className="px-6 py-2.5 text-sm font-bold text-white hover:text-primary-start transition-colors">
                 {t('landing.login')}
             </Link>
             <Link to="/register" className="hidden sm:flex px-6 py-2.5 bg-white text-black text-sm font-bold rounded-xl hover:bg-gray-200 transition-all shadow-lg shadow-white/10 items-center gap-2">
@@ -81,7 +81,7 @@ const LandingPage: React.FC = () => {
                     <MessageSquare className="w-48 h-48 text-primary-start" />
                 </div>
                 <div className="relative z-10 h-full flex flex-col justify-end">
-                    <div className="w-12 h-12 bg-primary-start/20 rounded-xl flex items-center justify-center mb-4 text-primary-300 border border-primary-start/20">
+                    <div className="w-12 h-12 bg-primary-start/20 rounded-xl flex items-center justify-center mb-4 text-primary-start border border-primary-start/20">
                         <Zap className="w-6 h-6" />
                     </div>
                     <h3 className="text-2xl font-bold mb-2 text-white">{t('landing.socraticAssistantTitle')}</h3>
@@ -92,7 +92,7 @@ const LandingPage: React.FC = () => {
             </div>
 
             <div className="md:col-span-1 row-span-1 glass-panel p-8 relative group hover:border-success-start/30 transition-colors">
-                 <div className="w-12 h-12 bg-success-start/20 rounded-xl flex items-center justify-center mb-4 text-success-300 border border-success-start/20">
+                 <div className="w-12 h-12 bg-success-start/20 rounded-xl flex items-center justify-center mb-4 text-success-start border border-success-start/20">
                     <Lock className="w-6 h-6" />
                 </div>
                 <h3 className="xl font-bold mb-2 text-white">{t('landing.fullSecurityTitle')}</h3>
@@ -102,7 +102,7 @@ const LandingPage: React.FC = () => {
             </div>
 
             <div className="md:col-span-1 row-span-1 glass-panel p-8 relative hover:border-accent-start/30 transition-colors">
-                <div className="w-12 h-12 bg-accent-start/20 rounded-xl flex items-center justify-center mb-4 text-accent-300 border border-accent-start/20">
+                <div className="w-12 h-12 bg-accent-start/20 rounded-xl flex items-center justify-center mb-4 text-accent-start border border-accent-start/20">
                     <TrendingUp className="w-6 h-6" />
                 </div>
                 <h3 className="text-xl font-bold mb-2 text-white">{t('landing.businessCenterTitle')}</h3>
@@ -116,7 +116,7 @@ const LandingPage: React.FC = () => {
                     <Database className="w-48 h-48 text-secondary-start" />
                 </div>
                 <div className="relative z-10 h-full flex flex-col justify-end">
-                    <div className="w-12 h-12 bg-secondary-start/20 rounded-xl flex items-center justify-center mb-4 text-secondary-300 border border-secondary-start/20">
+                    <div className="w-12 h-12 bg-secondary-start/20 rounded-xl flex items-center justify-center mb-4 text-secondary-start border border-secondary-start/20">
                         <FileText className="w-6 h-6" />
                     </div>
                     <h3 className="text-2xl font-bold mb-2 text-white">{t('landing.intelligentArchiveTitle')}</h3>

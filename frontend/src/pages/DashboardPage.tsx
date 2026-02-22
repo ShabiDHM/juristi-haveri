@@ -1,8 +1,9 @@
 // FILE: src/pages/DashboardPage.tsx
-// PHOENIX PROTOCOL - DASHBOARD V32.0 (MOBILE GREETING FIX)
+// PHOENIX PROTOCOL - DASHBOARD V32.1 (THEME ALIGNMENT)
 // 1. REFACTOR: Mobile greeting now breaks after comma (e.g., "Mirëmëngjes,\nShaban Bala").
 // 2. CONSISTENCY: Uses same glass styles, all existing functionality preserved.
-// 3. STATUS: 100% consistent with System Architectural Snapshot.
+// 3. THEME: Status colors mapped to theme variables (primary-start, secondary-start, success-start, accent-start).
+// 4. STATUS: 100% consistent with System Architectural Snapshot.
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -53,11 +54,31 @@ const DashboardPage: React.FC = () => {
   const theme = useMemo(() => {
     const status = briefing?.status || 'OPTIMAL';
     switch (status) {
-      case 'HOLIDAY': return { style: 'from-indigo-950/40 to-black/40 border-indigo-500/50', icon: <PartyPopper className="h-6 w-6 text-indigo-400" /> };
-      case 'WEEKEND': return { style: 'from-teal-950/40 to-black/40 border-teal-500/50', icon: <Coffee className="h-6 w-6 text-teal-400" /> };
-      case 'CRITICAL': return { style: 'from-red-950/40 via-red-900/40 to-black/40 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.2)]', icon: <ShieldAlert className="h-6 w-6 animate-pulse text-red-500" /> };
-      case 'WARNING': return { style: 'from-amber-950/40 to-black/40 border-amber-500/50', icon: <AlertTriangle className="h-6 w-6 text-amber-400" /> };
-      default: return { style: 'from-emerald-950/40 to-black/40 border-emerald-500/50', icon: <CheckCircle2 className="h-6 w-6 text-emerald-400" /> };
+      case 'HOLIDAY':
+        return { 
+          style: 'from-secondary-start/20 to-black/40 border-secondary-start/50', 
+          icon: <PartyPopper className="h-6 w-6 text-secondary-start" /> 
+        };
+      case 'WEEKEND':
+        return { 
+          style: 'from-primary-start/20 to-black/40 border-primary-start/50', 
+          icon: <Coffee className="h-6 w-6 text-primary-start" /> 
+        };
+      case 'CRITICAL':
+        return { 
+          style: 'from-accent-start/20 via-red-900/40 to-black/40 border-accent-start shadow-[0_0_20px_rgba(239,68,68,0.2)]', 
+          icon: <ShieldAlert className="h-6 w-6 animate-pulse text-accent-start" /> 
+        };
+      case 'WARNING':
+        return { 
+          style: 'from-secondary-start/20 to-black/40 border-secondary-start/50', 
+          icon: <AlertTriangle className="h-6 w-6 text-secondary-start" /> 
+        };
+      default: // OPTIMAL
+        return { 
+          style: 'from-success-start/20 to-black/40 border-success-start/50', 
+          icon: <CheckCircle2 className="h-6 w-6 text-success-start" /> 
+        };
     }
   }, [briefing?.status]);
 
@@ -180,15 +201,31 @@ const DashboardPage: React.FC = () => {
                         <div className="space-y-3">
                             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 ml-1 italic">RADARI I RREZIKUT</h3>
                             {briefing.risk_radar.map((item: RiskAlert) => (
-                                <div key={item.id} className={`p-4 rounded-2xl border flex items-center justify-between gap-4 backdrop-blur-xl transition-all ${item.level === 'LEVEL_1_PREKLUZIV' ? 'bg-red-500/10 border-red-500/30' : 'bg-amber-500/10 border-amber-500/20'}`}>
+                                <div key={item.id} className={`p-4 rounded-2xl border flex items-center justify-between gap-4 backdrop-blur-xl transition-all ${
+                                  item.level === 'LEVEL_1_PREKLUZIV' 
+                                    ? 'bg-accent-start/10 border-accent-start/30' 
+                                    : 'bg-secondary-start/10 border-secondary-start/20'
+                                }`}>
                                     <div className="flex items-center gap-3 min-w-0">
-                                        <div className={`w-2 h-2 rounded-full shrink-0 ${item.level === 'LEVEL_1_PREKLUZIV' ? 'bg-red-500 animate-ping' : 'bg-amber-500'}`} />
-                                        <span className={`text-xs sm:text-sm font-black uppercase tracking-tight ${item.level === 'LEVEL_1_PREKLUZIV' ? 'text-red-100' : 'text-amber-100'}`}>
+                                        <div className={`w-2 h-2 rounded-full shrink-0 ${
+                                          item.level === 'LEVEL_1_PREKLUZIV' 
+                                            ? 'bg-accent-start animate-ping' 
+                                            : 'bg-secondary-start'
+                                        }`} />
+                                        <span className={`text-xs sm:text-sm font-black uppercase tracking-tight ${
+                                          item.level === 'LEVEL_1_PREKLUZIV' 
+                                            ? 'text-accent-start' 
+                                            : 'text-secondary-start'
+                                        }`}>
                                             {item.title}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 rounded-xl border border-white/5 shrink-0">
-                                        <Timer size={14} className={item.level === 'LEVEL_1_PREKLUZIV' ? 'text-red-400' : 'text-amber-400'} />
+                                        <Timer size={14} className={
+                                          item.level === 'LEVEL_1_PREKLUZIV' 
+                                            ? 'text-accent-start' 
+                                            : 'text-secondary-start'
+                                        } />
                                         <span className="text-xs font-black font-mono text-white tabular-nums">{formatCountdown(item.seconds_remaining)}</span>
                                     </div>
                                 </div>
@@ -294,15 +331,15 @@ const DashboardPage: React.FC = () => {
 
         {caseToDeleteId && (
           <div className="fixed inset-0 bg-background-dark/60 backdrop-blur-xl flex items-center justify-center z-[110] p-4">
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="glass-high w-full max-w-md p-10 rounded-[3rem] shadow-2xl text-center border border-rose-500/30">
-              <div className="w-20 h-20 bg-rose-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-rose-500/20 shadow-inner">
-                  <Trash2 className="h-10 w-10 text-rose-500" />
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="glass-high w-full max-w-md p-10 rounded-[3rem] shadow-2xl text-center border border-accent-start/30">
+              <div className="w-20 h-20 bg-accent-start/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-accent-start/20 shadow-inner">
+                  <Trash2 className="h-10 w-10 text-accent-start" />
               </div>
               <h2 className="text-2xl font-black text-white mb-3 uppercase tracking-tight">{t('caseDelete.confirmTitle', 'Fshij Rastin?')}</h2>
               <p className="text-gray-400 text-sm mb-10 leading-relaxed italic font-medium">{t('caseDelete.confirmMessage', 'Kjo veprim është i pakthyeshëm. Të gjitha dokumentet do të fshihen.')}</p>
               <div className="flex justify-center gap-5">
                 <button type="button" onClick={() => setCaseToDeleteId(null)} className="glass-button flex-1 h-14 rounded-2xl text-[10px] uppercase tracking-widest">{t('general.cancel', 'Anulo')}</button>
-                <button type="button" onClick={confirmDeleteCase} disabled={isDeletingCase} className="flex-1 h-14 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-black shadow-lg flex items-center justify-center gap-3 active:scale-95 text-[10px] uppercase tracking-widest disabled:opacity-50 transition-all">
+                <button type="button" onClick={confirmDeleteCase} disabled={isDeletingCase} className="flex-1 h-14 rounded-2xl bg-accent-start hover:bg-accent-end text-white font-black shadow-lg flex items-center justify-center gap-3 active:scale-95 text-[10px] uppercase tracking-widest disabled:opacity-50 transition-all">
                   {isDeletingCase ? <Loader2 className="animate-spin h-5 w-5" /> : t('general.delete', 'Fshij')}
                 </button>
               </div>

@@ -15,8 +15,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Juristi AI',
-        short_name: 'Juristi',
+        name: 'Kontabilisti AI',
+        short_name: 'Kontabilisti',
         description: 'Platforma e Inteligjencës Ligjore',
         theme_color: '#111827', 
         background_color: '#111827',

@@ -235,7 +235,7 @@ const DraftingMockup = () => (
              <motion.div initial={{ width: 0 }} animate={{ width: "40%" }} transition={{ duration: 0.5, delay: 2 }} className="h-2 lg:h-3 bg-white/5 rounded" />
         </div>
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 2.5 }} className="absolute bottom-2 lg:bottom-10 right-0 left-0 mx-2 lg:mx-4 p-3 bg-primary-start/80 backdrop-blur-sm border border-primary-end rounded-xl shadow-lg">
-            <div className="flex items-center gap-2 mb-1"><BrainCircuit className="w-3 h-3 lg:w-4 lg:h-4 text-white" /><span className="text-[9px] lg:text-[10px] text-white font-bold uppercase">Juristi AI</span></div>
+            <div className="flex items-center gap-2 mb-1"><BrainCircuit className="w-3 h-3 lg:w-4 lg:h-4 text-white" /><span className="text-[9px] lg:text-[10px] text-white font-bold uppercase">Kontabilisti AI</span></div>
             <div className="text-[10px] lg:text-xs text-white/90">Duke analizuar Ligjin nr. 03/L-006... Sugjeroj të shtoni Nenin 14.</div>
         </motion.div>
     </div>

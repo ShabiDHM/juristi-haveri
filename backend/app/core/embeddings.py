@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class JuristiRemoteEmbeddings(EmbeddingFunction):
     """
-    The canonical ChromaDB embedding function for the Juristi AI backend.
+    The canonical ChromaDB embedding function for the Kontabilisti AI backend.
     
     This class conforms to the chromadb.EmbeddingFunction interface and uses the
     robust, centralized `embedding_service.generate_embedding` function to

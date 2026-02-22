@@ -25,7 +25,7 @@ class AlbanianNERService:
     """
     Service responsible for detecting Named Entities (PII) using Hybrid Intelligence.
     Tier 1: DeepSeek V3 (Cloud)
-    Tier 2: Juristi AI Core (Local Spacy)
+    Tier 2: Kontabilisti AI Core (Local Spacy)
     """
     def __init__(self):
         self.timeout = 15.0 # Slightly higher for LLM
@@ -81,7 +81,7 @@ class AlbanianNERService:
                 response_format={"type": "json_object"},
                 extra_headers={
                     "HTTP-Referer": "https://juristi.tech", 
-                    "X-Title": "Juristi AI NER"
+                    "X-Title": "Kontabilisti AI NER"
                 }
             )
             

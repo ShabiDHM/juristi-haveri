@@ -10,7 +10,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from app.services.backup_service import backup_service
 
 if __name__ == "__main__":
-    print("--- JURISTI AI BLACK BOX RECORDER ---")
+    print("--- Kontabilisti AI BLACK BOX RECORDER ---")
     try:
         filename = backup_service.perform_full_backup()
         print(f"🎉 Backup Success! File secured: {filename}")

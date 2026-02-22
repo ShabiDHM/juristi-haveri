@@ -40,7 +40,7 @@ async def stream_chat_response(
             
             # Mandate brevity for FAST mode
             system_prompt = f"""
-            Ti je 'Juristi AI'. 
+            Ti je 'Kontabilisti AI'. 
             DETYRA: Jep një përgjigje të shpejtë dhe të shkurtër (MAX 2 PARAGRAFE).
             CITIMI: Përdor formatin [Emri i Ligjit](doc://ligji).
             KONTEKSTI I RASTIT:

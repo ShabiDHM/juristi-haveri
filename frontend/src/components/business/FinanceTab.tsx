@@ -203,7 +203,7 @@ export const FinanceTab: React.FC = () => {
     const downloadInvoice = async (id: string) => { try { await apiService.downloadInvoicePdf(id, i18n.language || 'sq'); } catch { alert(t('error.generic')); } };
     
     const generateDigitalReceipt = (expense: Expense): File => {
-        const content = `DËSHMI DIGJITALE E SHPENZIMIT (JURISTI AI)\n------------------------------------------------\nKategoria:   ${expense.category}\nShuma:       €${expense.amount.toFixed(2)}\nData:        ${new Date(expense.date).toLocaleDateString('sq-AL')}\nPërshkrimi:  ${expense.description || 'Pa përshkrim'}\nLënda:       ${expense.related_case_id ? (cases.find(c => c.id === expense.related_case_id)?.title || 'E panjohur') : 'Jo e specifikuar'}\n------------------------------------------------\nGjeneruar më: ${new Date().toLocaleString('sq-AL')}`;
+        const content = `DËSHMI DIGJITALE E SHPENZIMIT (Kontabilisti AI)\n------------------------------------------------\nKategoria:   ${expense.category}\nShuma:       €${expense.amount.toFixed(2)}\nData:        ${new Date(expense.date).toLocaleDateString('sq-AL')}\nPërshkrimi:  ${expense.description || 'Pa përshkrim'}\nLënda:       ${expense.related_case_id ? (cases.find(c => c.id === expense.related_case_id)?.title || 'E panjohur') : 'Jo e specifikuar'}\n------------------------------------------------\nGjeneruar më: ${new Date().toLocaleString('sq-AL')}`;
         const blob = new Blob([content], { type: 'text/plain' });
         return new File([blob], `Shpenzim_${expense.category.replace(/\s+/g, '_')}_${expense.date}.txt`, { type: 'text/plain' });
     };

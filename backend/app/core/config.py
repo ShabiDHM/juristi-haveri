@@ -1,7 +1,7 @@
 # FILE: backend/app/core/config.py
-# PHOENIX PROTOCOL - CONFIGURATION V7.3 (EXPLICIT CORS FIX)
-# 1. FIXED: Removed wildcards. Added literal Vercel deployment URL.
-# 2. FIXED: Included production and dev domains as exact matches.
+# PHOENIX PROTOCOL - CONFIGURATION V7.5 (KONTABILISTI AI ONLY)
+# 1. UPDATED: FRONTEND_URL and CORS origins to use haveri.tech domain.
+# 2. REMOVED: All juristi.tech references as this is a separate instance.
 # 3. STATUS: Resolves credentialed CORS blocking on Vercel.
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     # --- API Setup ---
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: str = "production"
-    FRONTEND_URL: str = "https://juristi.tech"
+    FRONTEND_URL: str = "https://haveri.tech"
     
     # --- Auth ---
     SECRET_KEY: str = "changeme"
@@ -35,11 +35,10 @@ class Settings(BaseSettings):
     # Browsers block credentials if wildcards (*) are used.
     BACKEND_CORS_ORIGINS: List[str] = Field(
         default=[
-            "https://juristi.tech",
-            "https://www.juristi.tech",
-            "https://api.juristi.tech",
-            "https://advocatus-ai.vercel.app",
-            "https://advocatus-bpu736pv2-shabans-projects-31c11eb7.vercel.app",
+            "https://haveri.tech",
+            "https://www.haveri.tech",
+            "https://api.haveri.tech",
+            "https://juristi-haveri-4db2iago2-shabans-projects-31c11eb7.vercel.app",
             "http://localhost:3000",
             "http://localhost:5173",
             "http://127.0.0.1:3000",

@@ -225,7 +225,7 @@ def generate_monthly_report_pdf(state: WizardState, user: UserInDB, month: int, 
     # Disclaimer Footer
     elements.append(Spacer(1, 10*mm))
     elements.append(Paragraph(
-        "Ky dokument është gjeneruar automatikisht nga platforma Juristi AI. "
+        "Ky dokument është gjeneruar automatikisht nga platforma Kontabilisti AI. "
         "Ju lutemi konsultohuni me kontabilistin tuaj para deklarimit final në ATK.", 
         ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, textColor=colors.gray, alignment=1)
     ))

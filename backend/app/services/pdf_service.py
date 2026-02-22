@@ -244,7 +244,7 @@ class PDFProcessor:
             c.setFont("Helvetica", 8) # Standard font is safe for branding
             c.setFillColor(colors.grey)
             
-            c.drawCentredString(A4[0] / 2, 1 * cm, f"Rasti: {case_id} | Juristi AI System")
+            c.drawCentredString(A4[0] / 2, 1 * cm, f"Rasti: {case_id} | Kontabilisti AI System")
             c.save()
             watermark_stream.seek(0)
             watermark_pdf = PdfReader(watermark_stream)

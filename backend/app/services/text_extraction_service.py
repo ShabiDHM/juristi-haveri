@@ -29,7 +29,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 MAX_WORKERS = 2
-FOOTER_PATTERN = re.compile(r'Rasti:\s*\S+\s*\|\s*Juristi AI System')
+FOOTER_PATTERN = re.compile(r'Rasti:\s*\S+\s*\|\s*Kontabilisti AI System')
 
 def _sanitize_text(text: str) -> str:
     """Removes null bytes and cleans text."""

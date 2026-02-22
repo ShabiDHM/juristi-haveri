@@ -35,7 +35,7 @@ from .api.endpoints.laws import router as laws_router
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Juristi AI API", lifespan=lifespan)
+app = FastAPI(title="Kontabilisti AI API", lifespan=lifespan)
 
 # --- MIDDLEWARE ---
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*") # type: ignore

@@ -38,7 +38,7 @@ const MobileConnect: React.FC = () => {
                 <div className="w-16 h-16 bg-primary-start/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-primary-start/30">
                     <UploadCloud size={32} className="text-primary-start" />
                 </div>
-                <h1 className="text-2xl font-bold text-white mb-2">Juristi AI Connect</h1>
+                <h1 className="text-2xl font-bold text-white mb-2">Kontabilisti AI Connect</h1>
                 <p className="text-gray-400 text-sm">Skanoni dokumentin për analizë të menjëhershme në desktop.</p>
             </div>
 

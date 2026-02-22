@@ -2,7 +2,7 @@
   "general": {
     "login": "Hyrja",
     "logout": "Dalja",
-    "dashboard": "Juristi AI",
+    "dashboard": "Kontabilisti AI",
     "drafting": "Hartimi",
     "search": "Kërko",
     "userProfile": "Profili i Përdoruesit",
@@ -42,7 +42,7 @@
   "landing": {
     "login": "Hyrja",
     "getStarted": "Fillo Tani",
-    "versionBadge": "Juristi AI v2.0",
+    "versionBadge": "Kontabilisti AI v2.0",
     "heroTitle": "Zgjidhni rastet me",
     "heroHighlight": "Inteligjencë Gjyqësore",
     "heroSubtitle": "Një platformë e fuqishme ligjore e drejtuar nga AI për të transformuar menaxhimin e rasteve, analizën ligjore dhe strategjinë. Fokusohuni në ligj, ne do të kujdesemi për pjesën tjetër.",

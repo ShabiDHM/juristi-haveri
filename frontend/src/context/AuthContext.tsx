@@ -112,7 +112,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         <div className="min-h-screen bg-gray-900 flex items-center justify-center">
             <div className="text-center">
                 <Loader2 className="h-12 w-12 text-blue-500 animate-spin mx-auto mb-4" />
-                <h2 className="text-xl font-bold text-white">Juristi AI</h2>
+                <h2 className="text-xl font-bold text-white">Kontabilisti AI</h2>
                 <p className="text-sm text-gray-400 mt-2">Duke u ngarkuar...</p>
             </div>
         </div>

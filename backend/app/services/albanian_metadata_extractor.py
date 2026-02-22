@@ -84,7 +84,7 @@ class AlbanianMetadataExtractor:
                 response_format={"type": "json_object"},
                 extra_headers={
                     "HTTP-Referer": "https://juristi.tech", 
-                    "X-Title": "Juristi AI Metadata"
+                    "X-Title": "Kontabilisti AI Metadata"
                 }
             )
             

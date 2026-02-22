@@ -1,8 +1,9 @@
 # FILE: backend/app/api/endpoints/auth.py
-# PHOENIX PROTOCOL - AUTHENTICATION V2.8 (DOMAIN FIX FOR CROSS-SITE COOKIES)
-# 1. FIXED: Added domain=".juristi.tech" to refresh_token cookie.
-# 2. ADDED: Logging to confirm cookie setting.
-# 3. STATUS: 100% Pylance Clear.
+# PHOENIX PROTOCOL - AUTHENTICATION V2.11 (HAVERI DOMAIN + CORRECT SERVICE CALL)
+# 1. FIXED: Cookie domain changed to ".haveri.tech" for haveri instance.
+# 2. ADDED: /register endpoint that properly uses user_service.create.
+# 3. UPDATED: Log messages to reflect haveri domain.
+# 4. STATUS: 100% Pylance Clear.
 
 from datetime import timedelta
 from typing import Any
@@ -16,7 +17,7 @@ from ...core.config import settings
 from ...core.db import get_db
 from ...services import user_service
 from ...models.token import Token
-from ...models.user import UserInDB, UserLogin
+from ...models.user import UserInDB, UserLogin, RegisterRequest, UserCreate
 from .dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -52,19 +53,19 @@ async def login_access_token(response: Response, form_data: UserLogin, db: Datab
     refresh_token_expires = timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
     refresh_token = security.create_refresh_token(data={"id": str(user.id)}, expires_delta=refresh_token_expires)
 
-    # Set cookie with domain for cross-site access
+    # Set cookie with domain for cross-site access (haveri.tech)
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
         secure=True,
         samesite="none",
-        domain=".juristi.tech",          # Allow subdomains
+        domain=".haveri.tech",          # Allow subdomains of haveri.tech
         path="/",
         max_age=int(refresh_token_expires.total_seconds())
     )
     
-    logger.info(f"Login successful for user {user.id}, cookie set with domain .juristi.tech")
+    logger.info(f"Login successful for user {user.id}, cookie set with domain .haveri.tech")
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/refresh", response_model=Token)
@@ -80,8 +81,31 @@ async def logout(response: Response):
         httponly=True,
         secure=True,
         samesite="none",
-        domain=".juristi.tech",
+        domain=".haveri.tech",
         path="/"
     )
     logger.info("Logout successful, cookie deleted")
     return {"message": "Logged out"}
+
+@router.post("/register", status_code=status.HTTP_201_CREATED)
+async def register_user(register_data: RegisterRequest, db: Database = Depends(get_db)):
+    # Check if user already exists
+    existing = user_service.get_user_by_email(db, register_data.email)
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Prepare UserCreate object
+    # If username is not provided, use email as username
+    username = register_data.username if register_data.username else register_data.email
+    user_create = UserCreate(
+        username=username,
+        email=register_data.email,
+        password=register_data.password,
+        full_name=register_data.full_name
+    )
+    
+    # Create user using the service (which hashes password and sets defaults)
+    created_user = user_service.create(db, user_create)
+    
+    logger.info(f"User registered successfully: {register_data.email} (id: {created_user.id})")
+    return {"message": "User created successfully", "user_id": str(created_user.id)}

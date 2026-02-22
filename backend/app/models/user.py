@@ -1,7 +1,8 @@
 # FILE: backend/app/models/user.py
-# PHOENIX PROTOCOL - USER MODEL V8.2 (TIER EXPANSION SYNC)
+# PHOENIX PROTOCOL - USER MODEL V8.3 (ADDED REGISTERREQUEST)
 # 1. UPDATED: PLAN_LIMITS for TEAM_PLAN changed from 5 to 10.
-# 2. STATUS: Aligned with Juristi Tier Expansion requirements.
+# 2. ADDED: RegisterRequest model for user registration.
+# 3. STATUS: Aligned with Juristi Tier Expansion requirements.
 
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import Optional, Dict, Any
@@ -45,9 +46,16 @@ class UserBase(BaseModel):
     organization_name: Optional[str] = None
     logo: Optional[str] = None 
 
-# Model for creating a new user
+# Model for creating a new user (internal use)
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8)
+
+# Model for user registration (public endpoint)
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+    username: Optional[str] = None  # optional, will default to email if not provided
+    full_name: Optional[str] = None
 
 # Model for updating user details
 class UserUpdate(BaseModel):

@@ -1,7 +1,7 @@
 # FILE: backend/app/services/user_service.py
-# PHOENIX PROTOCOL - USER SERVICE V1.4 (GATEKEEPER FIX)
-# 1. FIX: 'authenticate' now correctly allows login for users based on password verification alone, delegating the status check to the router.
-# 2. FIX: 'create' method now explicitly sets the default status to 'INACTIVE' for the gatekeeper.
+# PHOENIX PROTOCOL - USER SERVICE V1.5 (TYPE SAFETY & IMPORT FIX)
+# 1. FIX: Changed imports to relative to resolve Pylance import errors.
+# 2. FIX: Added check for None hashed_password in authenticate.
 # 3. STATUS: Aligns login logic with the Admin Gatekeeper workflow.
 
 from pymongo.database import Database
@@ -13,7 +13,7 @@ import logging
 import re
 
 from app.core.security import verify_password, get_password_hash
-from app.models.user import UserInDB, UserCreate
+from ..models.user import UserInDB, UserCreate  # Changed to relative import
 from app.services import storage_service
 
 logger = logging.getLogger(__name__)
@@ -45,14 +45,14 @@ def authenticate(db: Database, username: str, password: str) -> Optional[UserInD
         
     if not user:
         return None
+    
+    # PHOENIX FIX: Handle missing hashed_password
+    if not user.hashed_password:
+        return None
         
-    # PHOENIX FIX: The original check was too strict. 
-    # This service should ONLY verify identity (password).
-    # The ROUTER is responsible for checking permissions (like subscription status).
     if not verify_password(password, user.hashed_password):
         return None
         
-    # If password is correct, return the user. The router will handle the rest.
     return user
 
 def create(db: Database, obj_in: UserCreate) -> UserInDB:
@@ -64,7 +64,6 @@ def create(db: Database, obj_in: UserCreate) -> UserInDB:
     user_data["created_at"] = datetime.now(timezone.utc)
     
     # Explicitly set status for Gatekeeper
-    # This is now handled in auth.py, but setting it here is safer.
     user_data["subscription_status"] = "INACTIVE"
     
     result = db.users.insert_one(user_data)

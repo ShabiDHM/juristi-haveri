@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   PenTool, Send, Copy, Download, RefreshCw, AlertCircle, CheckCircle, Clock, 
   FileText, Trash2, Briefcase, ChevronDown, LayoutTemplate,
-  Lock, BrainCircuit, Archive, Scale 
+  Lock, BrainCircuit, Archive, Calculator 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
@@ -278,7 +278,7 @@ const ResultPanel: React.FC<ResultPanelProps> = ({ t, currentJob, saving, notifi
             case 'COMPLETED': return { text: t('drafting.statusCompleted'), color: 'text-success-start', icon: <CheckCircle className="h-5 w-5" /> };
             case 'FAILED': return { text: t('drafting.statusFailed'), color: 'text-accent-start', icon: <AlertCircle className="h-5 w-5" /> };
             case 'PROCESSING': return { text: t('drafting.statusWorking'), color: 'text-secondary-start', icon: <Clock className="h-5 w-5 animate-pulse" /> };
-            default: return { text: t('drafting.statusResult'), color: 'text-white', icon: <Scale className="h-5 w-5 text-gray-500" /> };
+            default: return { text: t('drafting.statusResult'), color: 'text-white', icon: <Calculator className="h-5 w-5 text-gray-500" /> };
         }
     }, [currentJob.status, t]);
 

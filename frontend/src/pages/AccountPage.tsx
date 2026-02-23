@@ -2,7 +2,7 @@
 // PHOENIX PROTOCOL - ACCOUNT PAGE V2.0 (GLASS STYLE)
 // 1. VISUALS: Applied global 'glass-panel' and 'glass-input' classes.
 // 2. UX: Enhanced read-only fields to look like glass cards.
-// 3. SAFETY: stylized the "Danger Zone" with a red-tinted glass effect.
+
 
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';

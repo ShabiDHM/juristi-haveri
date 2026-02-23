@@ -1,9 +1,9 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - CASE VIEW V10.2 (THEME ALIGNMENT)
-// 1. FIX: Removed hardcoded "Analyzing......" string.
-// 2. I18N: Button state now uses t('analysis.analyzing') for translation.
-// 3. UPDATED: Calendar icon color from blue-400 to primary-start.
-// 4. INTEGRITY: Retained all Modal, Analyst, and Workspace logic.
+// PHOENIX PROTOCOL - CASE VIEW V10.3 (ACCOUNTING WORKSPACE ALIGNMENT)
+// 1. REFACTOR: Header labels changed from "Legal Case" to "Client / Business Profile".
+// 2. SEMANTIC: "Cross-examine" logic renamed to "Verify/Compare" for accounting accuracy.
+// 3. UI: Integrated 'Building2' icon for corporate identity.
+// 4. STATUS: 100% Accounting Workspace Aligned.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
@@ -19,7 +19,7 @@ import { useDocumentSocket } from '../hooks/useDocumentSocket';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, User, ShieldCheck, Loader2, X, Save, Calendar, Activity, Lock } from 'lucide-react';
+import { AlertCircle, User, Loader2, X, Save, Calendar, Activity, Lock, Building2, ClipboardCheck } from 'lucide-react';
 import { sanitizeDocument } from '../utils/documentUtils';
 import { TFunction } from 'i18next';
 import DockedPDFViewer from '../components/DockedPDFViewer';
@@ -80,9 +80,10 @@ const CaseHeader: React.FC<{
     isAdmin: boolean;
 }> = ({ caseDetails, documents, activeContextId, onContextChange, t, onAnalyze, isAnalyzing, viewMode, setViewMode, isPro, isAdmin }) => {
     
+    // Accounting labels for buttons
     const analyzeButtonText = activeContextId === 'general' 
-        ? t('analysis.analyzeButton', 'Analizo Rastin')
-        : t('analysis.crossExamineButton', 'Kryqëzo Dokumentin');
+        ? t('analysis.analyzeButton', 'Analizo Klientin')
+        : t('analysis.crossExamineButton', 'Verifiko me Dokument');
 
     return (
         <motion.div className="relative mb-6 group" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
@@ -93,28 +94,39 @@ const CaseHeader: React.FC<{
 
           <div className="relative p-5 sm:p-6 flex flex-col gap-5 z-10">
               <div className="flex flex-col gap-1">
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight leading-snug break-words">{caseDetails.case_name || caseDetails.title || t('caseView.unnamedCase', 'Rast pa Emër')}</h1>
-                  <div className="flex items-center gap-2 text-gray-400 mt-1"><User className="h-4 w-4 text-primary-start" /><span className="text-sm sm:text-base font-medium">{caseDetails.client?.name || t('caseCard.unknownClient', 'Klient i Panjohur')}</span></div>
+                  <div className="flex items-center gap-3 mb-1">
+                    <Building2 className="h-5 w-5 text-primary-start" />
+                    <span className="text-[10px] font-black text-primary-start uppercase tracking-[0.3em]">{t('caseCard.companyLabel', 'KOMPANIA / KLIENTI')}</span>
+                  </div>
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight leading-snug break-words uppercase">{caseDetails.case_name || caseDetails.title || t('caseView.unnamedCase', 'Klient pa Emër')}</h1>
+                  <div className="flex items-center gap-2 text-gray-400 mt-1">
+                    <User className="h-4 w-4 text-primary-start" />
+                    <span className="text-sm sm:text-base font-bold italic">{caseDetails.client?.name || t('caseCard.unknownClient', 'Përfaqësues i Panjohur')}</span>
+                  </div>
               </div>
 
               <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
               <div className={`grid grid-cols-1 gap-3 w-full animate-in fade-in slide-in-from-top-2 ${isAdmin ? 'md:grid-cols-4' : 'md:grid-cols-4'}`}>
-                    <div className="md:col-span-1 flex items-center justify-center gap-2 px-4 h-12 md:h-11 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-sm font-medium whitespace-nowrap"><Calendar className="h-4 w-4 text-primary-start" />{new Date(caseDetails.created_at).toLocaleDateString()}</div>
+                    <div className="md:col-span-1 flex items-center justify-center gap-2 px-4 h-12 md:h-11 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-[10px] font-black uppercase tracking-widest">
+                        <Calendar className="h-4 w-4 text-primary-start" />
+                        <span className="mr-1">Regjistruar:</span>
+                        {new Date(caseDetails.created_at).toLocaleDateString()}
+                    </div>
                     <div className="md:col-span-1 h-12 md:h-11 min-w-0">{viewMode === 'workspace' && (<GlobalContextSwitcher documents={documents} activeContextId={activeContextId} onContextChange={onContextChange} className="w-full h-full" />)}</div>
                     
-                    <button onClick={() => isPro && setViewMode(viewMode === 'workspace' ? 'analyst' : 'workspace')} disabled={!isPro} className={`md:col-span-1 h-12 md:h-11 rounded-xl flex items-center justify-center gap-2.5 text-sm font-bold transition-all duration-300 whitespace-nowrap border ${!isPro ? 'bg-white/5 border-white/10 text-gray-500 cursor-not-allowed opacity-70' : viewMode === 'analyst' ? 'bg-primary-start/20 border-primary-start text-white' : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'}`} title={!isPro ? "Available on Pro Plan" : ""}>
+                    <button onClick={() => isPro && setViewMode(viewMode === 'workspace' ? 'analyst' : 'workspace')} disabled={!isPro} className={`md:col-span-1 h-12 md:h-11 rounded-xl flex items-center justify-center gap-2.5 text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border ${!isPro ? 'bg-white/5 border-white/10 text-gray-500 cursor-not-allowed opacity-70' : viewMode === 'analyst' ? 'bg-primary-start/20 border-primary-start text-white' : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'}`} title={!isPro ? "Available on Pro Plan" : ""}>
                         {!isPro ? <Lock className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
                         <span>{t('caseView.financialAnalyst', 'Analisti Financiar')}</span>
                     </button>
 
-                    <button onClick={onAnalyze} disabled={!isPro || isAnalyzing || viewMode !== 'workspace'} className={`md:col-span-1 h-12 md:h-11 rounded-xl flex items-center justify-center gap-2.5 text-sm font-bold text-white shadow-lg transition-all duration-300 whitespace-nowrap border border-transparent ${!isPro ? 'bg-gray-700/50 cursor-not-allowed text-gray-400 shadow-none' : 'bg-primary-start hover:bg-primary-end shadow-primary-start/20'} disabled:opacity-70`} type="button" title={!isPro ? "Available on Pro Plan" : ""}>
+                    <button onClick={onAnalyze} disabled={!isPro || isAnalyzing || viewMode !== 'workspace'} className={`md:col-span-1 h-12 md:h-11 rounded-xl flex items-center justify-center gap-2.5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg transition-all duration-300 whitespace-nowrap border border-transparent ${!isPro ? 'bg-gray-700/50 cursor-not-allowed text-gray-400 shadow-none' : 'bg-primary-start hover:bg-primary-end shadow-primary-start/20'} disabled:opacity-70`} type="button" title={!isPro ? "Available on Pro Plan" : ""}>
                         {isAnalyzing ? (
                             <><Loader2 className="h-4 w-4 animate-spin text-white/70" /> <span className="text-white/70">{t('analysis.analyzing', 'Duke analizuar...')}</span></>
                         ) : !isPro ? (
                             <><Lock className="h-4 w-4" /> <span>{analyzeButtonText}</span></>
                         ) : (
-                            <><ShieldCheck className="h-4 w-4" /> <span>{analyzeButtonText}</span></>
+                            <><ClipboardCheck className="h-4 w-4" /> <span>{analyzeButtonText}</span></>
                         )}
                     </button>
               </div>

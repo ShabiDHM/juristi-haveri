@@ -1,213 +1,304 @@
-# FILE: backend/app/services/analysis_service.py
-# PHOENIX PROTOCOL - ANALYSIS SERVICE V25.0 (ACCOUNTING TRANSFORMATION)
-# 1. REFACTOR: Transformed from "Legal Strategy" to "Audit & Fiscal Compliance".
-# 2. SEMANTIC: Updated PDF Report headers for Financial/Audit context.
-# 3. ALIGNMENT: Integrated with new Fiscal LLM Personas (ATK Auditor Simulation).
-# 4. STATUS: 100% Accounting Aligned.
+# FILE: backend/app/services/report_service.py
+# PHOENIX PROTOCOL - REPORT SERVICE V7.1 (EXPORT RESOLUTION FIX)
+# 1. FIX: Renamed '_get_text' to 'get_text' to allow public access from other services.
+# 2. STATUS: Import resolution for AnalysisService verified.
 
-import asyncio
-import structlog
 import io
-from typing import List, Dict, Any, Tuple
-from pymongo.database import Database
-from bson import ObjectId
+import os
+import structlog
+import requests
+import markdown2
+import re
+from xhtml2pdf import pisa
 from datetime import datetime
-from xml.sax.saxutils import escape 
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm
+from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, Paragraph, Spacer, Table, TableStyle, Flowable
+from reportlab.platypus import Image as ReportLabImage
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.colors import HexColor, white
+from reportlab.lib.enums import TA_RIGHT, TA_LEFT
+from pymongo.database import Database
+from typing import List, Optional, Dict, Any
+from bson import ObjectId
+from xml.sax.saxutils import escape
+from PIL import Image as PILImage
 
-import app.services.llm_service as llm_service
-from . import vector_store_service, report_service, archive_service
-from .report_service import _get_text 
+# PHOENIX: Absolute imports
+from app.models.finance import InvoiceInDB
+from app.services import storage_service
 
 logger = structlog.get_logger(__name__)
 
-async def _fetch_rag_context_async(db: Database, case_id: str, user_id: str, include_laws: bool = True) -> str:
-    """PHOENIX: Parallelized RAG retrieval for Business context."""
-    case = await asyncio.to_thread(db.cases.find_one, {"_id": ObjectId(case_id) if ObjectId.is_valid(case_id) else case_id})
-    q = f"{case.get('case_name', '')} {case.get('description', '')}" if case else "Financial audit analysis"
-    
-    # Run Vector DB queries in parallel
-    tasks = [
-        asyncio.to_thread(vector_store_service.query_case_knowledge_base, user_id=user_id, query_text=q, case_context_id=case_id, n_results=15)
-    ]
-    if include_laws:
-        tasks.append(asyncio.to_thread(vector_store_service.query_global_knowledge_base, query_text=q, n_results=15))
-    
-    results = await asyncio.gather(*tasks)
-    business_facts = results[0]
-    global_regulations = results[1] if include_laws else []
+# --- STYLES & CONSTANTS ---
+COLOR_PRIMARY_TEXT = HexColor("#111827")
+COLOR_SECONDARY_TEXT = HexColor("#6B7280")
+COLOR_BORDER = HexColor("#E5E7EB")
+BRAND_COLOR_DEFAULT = "#0ea5e9" # Accounting blue/cyan
 
-    blocks = ["=== DOKUMENTACIONI I BIZNESIT ==="]
-    for f in business_facts:
-        blocks.append(f"DOKUMENTI: {f['source']} (Faqja {f['page']})\nTEKSTI: {f['text']}\n")
-    
-    if include_laws:
-        blocks.append("=== BAZA RREGULLATORE FISKALE ===")
-        for l in global_regulations:
-            blocks.append(f"RREGULLORJA/LIGJI: '{l['source']}'\nNENI/PËRMBAJTJA: {l['text']}\n")
-            
-    return "\n".join(blocks)
+STYLES = getSampleStyleSheet()
+STYLES.add(ParagraphStyle(name='H1', parent=STYLES['h1'], fontSize=22, textColor=COLOR_PRIMARY_TEXT, alignment=TA_RIGHT, fontName='Helvetica-Bold'))
+STYLES.add(ParagraphStyle(name='MetaLabel', parent=STYLES['Normal'], fontSize=8, textColor=COLOR_SECONDARY_TEXT, alignment=TA_RIGHT))
+STYLES.add(ParagraphStyle(name='MetaValue', parent=STYLES['Normal'], fontSize=10, textColor=COLOR_PRIMARY_TEXT, alignment=TA_RIGHT, spaceBefore=2))
+STYLES.add(ParagraphStyle(name='AddressLabel', parent=STYLES['Normal'], fontName='Helvetica-Bold', fontSize=10, textColor=COLOR_PRIMARY_TEXT, spaceBottom=6))
+STYLES.add(ParagraphStyle(name='AddressText', parent=STYLES['Normal'], fontSize=9, textColor=COLOR_SECONDARY_TEXT, leading=14))
+STYLES.add(ParagraphStyle(name='TableHeader', parent=STYLES['Normal'], fontName='Helvetica-Bold', fontSize=9, textColor=white, alignment=TA_LEFT))
+STYLES.add(ParagraphStyle(name='TableHeaderRight', parent=STYLES['TableHeader'], alignment=TA_RIGHT))
+STYLES.add(ParagraphStyle(name='TableCell', parent=STYLES['Normal'], fontSize=9, textColor=COLOR_PRIMARY_TEXT))
+STYLES.add(ParagraphStyle(name='TableCellRight', parent=STYLES['TableCell'], alignment=TA_RIGHT))
+STYLES.add(ParagraphStyle(name='TotalLabel', parent=STYLES['TableCellRight']))
+STYLES.add(ParagraphStyle(name='TotalValue', parent=STYLES['TableCellRight'], fontName='Helvetica-Bold'))
+STYLES.add(ParagraphStyle(name='NotesLabel', parent=STYLES['AddressLabel'], spaceBefore=10))
+STYLES.add(ParagraphStyle(name='FirmName', parent=STYLES['h3'], alignment=TA_RIGHT, fontSize=14, spaceAfter=4, textColor=COLOR_PRIMARY_TEXT))
+STYLES.add(ParagraphStyle(name='FirmMeta', parent=STYLES['Normal'], alignment=TA_RIGHT, fontSize=9, textColor=COLOR_SECONDARY_TEXT, leading=12))
 
-def authorize_case_access(db: Database, case_id: str, user_id: str) -> bool:
-    """Verifies access to the client/business profile."""
-    try:
-        c_oid = ObjectId(case_id) if ObjectId.is_valid(case_id) else case_id
-        u_oid = ObjectId(user_id) if ObjectId.is_valid(user_id) else user_id
-        return db.cases.find_one({"_id": c_oid, "owner_id": u_oid}) is not None
-    except: return False
-
-async def verify_business_compliance(db: Database, case_id: str, user_id: str) -> Dict[str, Any]:
-    """PHOENIX: High-IQ analysis mapping fiscal regulations to business data."""
-    if not authorize_case_access(db, case_id, user_id): return {"error": "Pa autorizim."}
-    context = await _fetch_rag_context_async(db, case_id, user_id, include_laws=True)
-    
-    system_prompt = """
-    DETYRA: Analizë e Përputhshmërisë Fiskale dhe Integritetit Financiar.
-    MANDATI: Shpjegoni 'NDIKIMIN FISKAL' të çdo rregulloreje për këtë biznes specifik.
-    JSON SCHEMA (STRIKT):
-    {
-      "executive_summary": "...",
-      "fiscal_audit": { 
-          "audit_risk_assessment": "...", 
-          "regulatory_basis": [{"title": "[Emri i Rregullores, Neni](doc://ligji)", "article": "...", "relevance": "..."}] 
-      },
-      "strategic_recommendation": { "recommendation_text": "...", "risks": [], "action_plan": [], "compliance_score": "XX%", "risk_level": "LOW/MEDIUM/HIGH" },
-      "missing_documentation": []
+# --- TRANSLATIONS (ACCOUNTING FOCUSED) ---
+TRANSLATIONS = {
+    "sq": {
+        "invoice_title": "FATURA", "invoice_num": "Nr.", "date_issue": "Data e Lëshimit", "date_due": "Afati i Pagesës",
+        "status": "Statusi", "from": "Nga", "to": "Për", "desc": "Përshkrimi", "qty": "Sasia", "price": "Çmimi",
+        "total": "Totali", "subtotal": "Nëntotali", "tax": "TVSH (18%)", "notes": "Shënime",
+        "footer_gen": "Dokument i gjeneruar nga", "page": "Faqe", 
+        "lbl_address": "Adresa:", "lbl_tel": "Tel:", "lbl_email": "Email:", "lbl_web": "Web:", "lbl_nui": "NUI:",
+        # Fiscal Transaction Map
+        "map_report_title": "Raporti i Verifikimit të Transaksioneve",
+        "map_case_id": "ID e Biznesit:",
+        "map_section_claims": "Transaksionet dhe Shënimet Kontabël",
+        "map_section_evidence": "Dokumentacioni Mbështetës / Faturat",
+        "map_exhibit": "Nr. Dokumentit:",
+        "map_proven": "Verifikuar:",
+        "map_admitted": "Audit:",
+        "map_auth": "Autentik:",
+        "map_rel_supports": "Përputhet",
+        "map_rel_contradicts": "Anomali",
+        "map_rel_related": "Ndërlidhet me",
+        "map_notes": "Vërejtje: ",
+        # Audit Analysis
+        "analysis_title": "Analiza e Biznesit",
+        "report_case_label": "Biznesi:"
     }
-    """
+}
+
+REPORT_CSS = f"""
+    @page {{
+        size: a4 portrait;
+        @frame header_frame {{
+            -pdf-frame-content: header_content;
+            left: 20mm; width: 170mm; top: 20mm; height: 35mm;
+        }}
+        @frame content_frame {{
+            left: 20mm; width: 170mm; top: 60mm; height: 207mm;
+        }}
+        @frame footer_frame {{
+            -pdf-frame-content: footer_content;
+            left: 20mm; width: 170mm; bottom: 10mm; height: 10mm;
+        }}
+    }}
+    body {{
+        font-family: 'Helvetica', sans-serif;
+        font-size: 11pt;
+        line-height: 1.6;
+        color: #333;
+    }}
+    h1, h2, h3, h4 {{
+        font-family: 'Helvetica-Bold', sans-serif;
+        color: #111827;
+        margin-bottom: 8px;
+        padding-bottom: 4px;
+    }}
+    h1 {{ 
+        font-size: 18pt; 
+        border-bottom: 2px solid #0ea5e9; 
+        margin-bottom: 5px;
+        padding-bottom: 4px; 
+    }}
+    h2.report-meta {{
+        font-size: 12pt;
+        color: {BRAND_COLOR_DEFAULT};
+        margin-top: 10px;
+        margin-bottom: 15px;
+        font-family: 'Helvetica', sans-serif;
+        border-bottom: none;
+    }}
+    h3 {{ font-size: 12pt; margin-top: 15px; border-bottom: 1px solid #eee; }}
+    p {{ margin: 0 0 10px 0; }}
+    ul {{ list-style-type: disc; padding-left: 20px; }}
+    li {{ margin-bottom: 5px; }}
+    strong {{ font-family: 'Helvetica-Bold', sans-serif; color: #000; }}
+"""
+
+def get_text(key: str, lang: str = "sq") -> str:
+    """Public helper for translation lookup."""
+    return TRANSLATIONS.get(lang, TRANSLATIONS["sq"]).get(key, key)
+
+def _get_branding(db: Database, user_id: str) -> dict:
     try:
-        # Aligned with updated llm_service method
-        raw_res = await asyncio.to_thread(llm_service.analyze_business_integrity, context, custom_prompt=system_prompt)
-        audit = raw_res.get("fiscal_audit", {})
-        rec = raw_res.get("strategic_recommendation", {})
-        return {
-            "summary": raw_res.get("executive_summary"),
-            "audit_risk": audit.get("audit_risk_assessment"),
-            "legal_basis": audit.get("regulatory_basis", []), 
-            "strategic_analysis": rec.get("recommendation_text"),
-            "weaknesses": rec.get("risks", []),
-            "action_plan": rec.get("action_plan", []),
-            "missing_evidence": raw_res.get("missing_documentation", []),
-            "success_probability": rec.get("compliance_score"),
-            "risk_level": rec.get("risk_level", "MEDIUM")
-        }
-    except Exception as e:
-        logger.error(f"Business Analysis Failed: {e}")
-        return {"summary": "Dështoi gjenerimi i analizës fiskale."}
+        oid = ObjectId(user_id) if ObjectId.is_valid(user_id) else user_id
+        profile = db.business_profiles.find_one({"user_id": oid})
+        if not profile: profile = db.business_profiles.find_one({"user_id": str(user_id)})
 
-async def run_deep_audit(db: Database, case_id: str, user_id: str) -> Dict[str, Any]:
-    """PHOENIX: Deep Audit Simulation & Anomaly Detection."""
-    if not authorize_case_access(db, case_id, user_id): return {"error": "Pa autorizim."}
-    
+        if profile:
+            return {
+                "firm_name": profile.get("firm_name", "Kontabilisti AI"), 
+                "address": profile.get("address", ""),
+                "email_public": profile.get("email_public", ""), 
+                "phone": profile.get("phone", ""),
+                "branding_color": profile.get("branding_color", BRAND_COLOR_DEFAULT), 
+                "logo_url": profile.get("logo_url"), 
+                "logo_storage_key": profile.get("logo_storage_key"), 
+                "website": profile.get("website", ""), 
+                "nui": profile.get("tax_id", "") 
+            }
+    except Exception as e: logger.error(f"Branding fetch failed: {e}")
+    return {"firm_name": "Kontabilisti AI", "branding_color": BRAND_COLOR_DEFAULT}
+
+def _process_image_bytes(data: bytes) -> Optional[io.BytesIO]:
     try:
-        full_context_task = _fetch_rag_context_async(db, case_id, user_id, include_laws=True)
-        facts_only_task = _fetch_rag_context_async(db, case_id, user_id, include_laws=False)
+        img = PILImage.open(io.BytesIO(data))
+        if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+            bg = PILImage.new("RGB", img.size, (255, 255, 255))
+            if img.mode == 'P': img = img.convert('RGBA')
+            bg.paste(img, mask=img.split()[3]) 
+            img = bg
+        elif img.mode != 'RGB': img = img.convert('RGB')
         
-        full_context, facts_only = await asyncio.gather(full_context_task, facts_only_task)
+        out_buffer = io.BytesIO()
+        img.save(out_buffer, format='JPEG', quality=100)
+        out_buffer.seek(0)
+        return out_buffer
+    except Exception as e: logger.error(f"Image processing failed: {e}")
+    return None
 
-        # Using updated fiscal intelligence methods
-        tasks = [
-            llm_service.generate_audit_simulation(full_context),
-            llm_service.build_financial_history(facts_only), 
-            llm_service.detect_accounting_anomalies(full_context)
-        ]
-        
-        adv, chr_res, cnt = await asyncio.gather(*tasks)
-        
-        return {
-            "adversarial_simulation": adv if isinstance(adv, dict) else {},
-            "chronology": chr_res.get("timeline", []) if isinstance(chr_res, dict) else [],
-            "contradictions": cnt.get("contradictions", []) if isinstance(cnt, dict) else []
-        }
-    except Exception as e:
-        logger.error(f"Deep Audit Failed: {e}")
-        return {"error": "Dështoi analiza e thellë e auditimit."}
+def _fetch_logo_buffer(url: Optional[str], storage_key: Optional[str] = None) -> Optional[io.BytesIO]:
+    if not url and not storage_key: return None
+    if storage_key:
+        try:
+            stream = storage_service.get_file_stream(storage_key)
+            if hasattr(stream, 'read'): return _process_image_bytes(stream.read())
+        except Exception: pass
+    if url and url.startswith("http"):
+        try:
+            response = requests.get(url, timeout=2) 
+            if response.status_code == 200: return _process_image_bytes(response.content)
+        except Exception: pass
+    return None
 
-async def archive_full_strategy_report(db: Database, case_id: str, user_id: str, fiscal_data: Dict[str, Any], audit_data: Dict[str, Any], lang: str = "sq") -> Dict[str, Any]:
-    """PHOENIX: Synthesizes Audit data into a Professional PDF."""
-    if not authorize_case_access(db, case_id, user_id): return {"error": "Pa autorizim."}
+def _header_footer_invoice(c: canvas.Canvas, doc: BaseDocTemplate, branding: dict, lang: str):
+    c.saveState()
+    c.setStrokeColor(COLOR_BORDER)
+    c.line(15 * mm, 15 * mm, 195 * mm, 15 * mm)
+    c.setFont('Helvetica', 8)
+    c.setFillColor(COLOR_SECONDARY_TEXT)
+    firm = branding.get('firm_name', 'Kontabilisti AI')
+    footer = f"{get_text('footer_gen', lang)} {firm} | {datetime.now().strftime('%d/%m/%Y')}"
+    c.drawString(15 * mm, 10 * mm, footer)
+    c.drawRightString(195 * mm, 10 * mm, f"{get_text('page', lang)} {doc.page}")
+    c.restoreState()
+
+def _build_doc(buffer: io.BytesIO, branding: dict, lang: str) -> BaseDocTemplate:
+    doc = BaseDocTemplate(buffer, pagesize=A4, leftMargin=15*mm, rightMargin=15*mm, topMargin=15*mm, bottomMargin=25*mm)
+    frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id='normal')
+    template = PageTemplate(id='main', frames=[frame], onPage=lambda c, d: _header_footer_invoice(c, d, branding, lang))
+    doc.addPageTemplates([template])
+    return doc
+
+def generate_invoice_pdf(invoice: InvoiceInDB, db: Database, user_id: str, lang: str = "sq") -> io.BytesIO:
+    branding = _get_branding(db, user_id)
+    buffer = io.BytesIO()
+    doc = _build_doc(buffer, branding, lang)
+    brand_color = HexColor(branding.get("branding_color", BRAND_COLOR_DEFAULT))
+    Story: List[Flowable] = []
+    logo_buffer = _fetch_logo_buffer(branding.get("logo_url"), branding.get("logo_storage_key"))
+    logo_obj = Spacer(0, 0)
+    if logo_buffer:
+        try:
+            p_img = PILImage.open(logo_buffer)
+            iw, ih = p_img.size
+            aspect = ih / float(iw)
+            w = 40 * mm; h = w * aspect
+            if h > 30 * mm: h = 30 * mm; w = h / aspect
+            logo_buffer.seek(0)
+            logo_obj = ReportLabImage(logo_buffer, width=w, height=h); logo_obj.hAlign = 'LEFT'
+        except: pass
+
+    firm_content: List[Flowable] = []
+    if branding.get("firm_name"): firm_content.append(Paragraph(str(branding.get("firm_name")), STYLES['FirmName']))
+    for key, label_key in [("address", "lbl_address"), ("nui", "lbl_nui"), ("email_public", "lbl_email"), ("phone", "lbl_tel"), ("website", "lbl_web")]:
+        val = branding.get(key)
+        if val: firm_content.append(Paragraph(f"<b>{get_text(label_key, lang)}</b> {val}", STYLES['FirmMeta']))
+
+    Story.append(Table([[logo_obj, firm_content]], colWidths=[100*mm, 80*mm], style=[('VALIGN', (0,0), (-1,-1), 'TOP')]))
+    Story.append(Spacer(1, 15*mm))
+
+    meta_data = [
+        [Paragraph(f"{get_text('invoice_num', lang)} {invoice.invoice_number}", STYLES['MetaValue'])], [Spacer(1, 3*mm)],
+        [Paragraph(get_text('date_issue', lang), STYLES['MetaLabel'])], [Paragraph(invoice.issue_date.strftime("%d/%m/%Y"), STYLES['MetaValue'])],
+        [Spacer(1, 2*mm)],
+        [Paragraph(get_text('date_due', lang), STYLES['MetaLabel'])], [Paragraph(invoice.due_date.strftime("%d/%m/%Y"), STYLES['MetaValue'])],
+    ]
+    Story.append(Table([[Paragraph(get_text('invoice_title', lang), STYLES['H1']), Table(meta_data, colWidths=[80*mm], style=[('ALIGN', (0,0), (-1,-1), 'RIGHT')])]], colWidths=[100*mm, 80*mm], style=[('VALIGN', (0,0), (-1,-1), 'TOP')]))
+    Story.append(Spacer(1, 15*mm))
+
+    client_content: List[Flowable] = [Paragraph(f"<b>{invoice.client_name}</b>", STYLES['AddressText'])]
+    c_address = getattr(invoice, 'client_address', ''); c_city = getattr(invoice, 'client_city', '')
+    full_address = f"{c_address}, {c_city}" if c_address and c_city else (c_address or c_city)
+    if full_address: client_content.append(Paragraph(f"<b>{get_text('lbl_address', lang)}</b> {full_address}", STYLES['AddressText']))
+    if getattr(invoice, 'client_tax_id', ''): client_content.append(Paragraph(f"<b>{get_text('lbl_nui', lang)}</b> {invoice.client_tax_id}", STYLES['AddressText']))
+    if getattr(invoice, 'client_email', ''): client_content.append(Paragraph(f"<b>{get_text('lbl_email', lang)}</b> {invoice.client_email}", STYLES['AddressText']))
+    if getattr(invoice, 'client_phone', ''): client_content.append(Paragraph(f"<b>{get_text('lbl_tel', lang)}</b> {invoice.client_phone}", STYLES['AddressText']))
+
+    t_addr = Table([[Paragraph(get_text('to', lang), STYLES['AddressLabel']), client_content]], colWidths=[20*mm, 160*mm])
+    t_addr.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'TOP')]))
+    Story.append(t_addr)
+    Story.append(Spacer(1, 10*mm))
+
+    data = [[Paragraph(get_text('desc', lang), STYLES['TableHeader']), Paragraph(get_text('qty', lang), STYLES['TableHeaderRight']), Paragraph(get_text('price', lang), STYLES['TableHeaderRight']), Paragraph(get_text('total', lang), STYLES['TableHeaderRight'])]]
+    for item in invoice.items:
+        data.append([Paragraph(item.description, STYLES['TableCell']), Paragraph(str(item.quantity), STYLES['TableCellRight']), Paragraph(f"{item.unit_price:,.2f} EUR", STYLES['TableCellRight']), Paragraph(f"{item.total:,.2f} EUR", STYLES['TableCellRight'])])
+    t_items = Table(data, colWidths=[90*mm, 20*mm, 35*mm, 35*mm])
+    t_items.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,0), brand_color), ('VALIGN', (0,0), (-1,-1), 'TOP'), ('LINEBELOW', (0,-1), (-1,-1), 1, COLOR_BORDER), ('TOPPADDING', (0,0), (-1,-1), 8), ('BOTTOMPADDING', (0,0), (-1,-1), 8), ('ROWBACKGROUNDS', (0,1), (-1,-1), [HexColor("#FFFFFF"), HexColor("#F9FAFB")]), ('LEFTPADDING', (0,0), (-1,-1), 6), ('RIGHTPADDING', (0,0), (-1,-1), 6)]))
+    Story.append(t_items)
+
+    totals_data = [[Paragraph(get_text('subtotal', lang), STYLES['TotalLabel']), Paragraph(f"{invoice.subtotal:,.2f} EUR", STYLES['TotalLabel'])], [Paragraph(get_text('tax', lang), STYLES['TotalLabel']), Paragraph(f"{invoice.tax_amount:,.2f} EUR", STYLES['TotalLabel'])], [Paragraph(f"<b>{get_text('total', lang)}</b>", STYLES['TotalValue']), Paragraph(f"<b>{invoice.total_amount:,.2f} EUR</b>", STYLES['TotalValue'])]]
+    t_totals = Table(totals_data, colWidths=[35*mm, 35*mm], style=[('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('LINEABOVE', (0, 2), (1, 2), 1.5, COLOR_PRIMARY_TEXT)])
+    Story.append(Table([["", t_totals]], colWidths=[110*mm, 70*mm], style=[('ALIGN', (1,0), (1,0), 'RIGHT'), ('VALIGN', (0,0), (-1,-1), 'TOP')]))
+
+    doc.build(Story)
+    buffer.seek(0)
+    return buffer
+
+def create_pdf_from_text(text: str, document_title: str, header_meta_content_html: Optional[str] = None) -> io.BytesIO:
+    """Generates a professional business report PDF from Markdown."""
+    buffer = io.BytesIO()
+    html_body = markdown2.markdown(text, extras=["tables", "fenced-code-blocks", "cuddled-lists"])
+
+    header_parts = []
+    if document_title and "Pa Titull" not in document_title: 
+        header_parts.append(f"<h1>{escape(document_title)}</h1>")
+    if header_meta_content_html:
+        header_parts.append(header_meta_content_html)
     
-    case = await asyncio.to_thread(db.cases.find_one, {"_id": ObjectId(case_id)})
-    if not case: return {"error": "Biznesi nuk u gjet."}
-        
-    case_name = case.get("case_name", "Pa Titull")
-    md = "---\n\n" 
+    header_html = f"<div id='header_content'>{''.join(header_parts)}</div>"
+    generation_date = datetime.now().strftime('%d/%m/%Y')
+    footer_html = f"<div id='footer_content' style='font-size: 9pt; color: #888;'><table width='100%' style='border-top: 1px solid #ccc; padding-top: 5px;'><tr><td align='right'>Data e Gjenerimit: {generation_date}</td></tr></table></div>"
 
-    # Section 1: Executive Summary
-    md += f"## 1. PËRMBLEDHJA FISKALE\n{fiscal_data.get('summary', '')}\n\n"
-    if fiscal_data.get('audit_risk'):
-        md += f"**VLERËSIMI I RISKUT TË AUDITIMIT:**\n{fiscal_data.get('audit_risk', '')}\n\n"
+    full_html = f"<html><head><style>{REPORT_CSS}</style></head><body>{header_html}{footer_html}{html_body}</body></html>"
+    pisa.CreatePDF(src=full_html, dest=buffer)
+    buffer.seek(0)
+    return buffer
+
+def generate_business_analysis_report(business_title: str, raw_report_markdown: str, lang: str = "sq") -> io.BytesIO:
+    """Generates a Fiscal Audit Report with specific business metadata."""
+    main_title = get_text('analysis_title', lang)
+    display_title = business_title if business_title and business_title.strip() != "" else "Pa Titull"
+    header_meta_html = f"<h2 class='report-meta'>{get_text('report_case_label', lang)} {escape(display_title)}</h2>"
     
-    # Section 2: Regulatory Basis
-    if fiscal_data.get('legal_basis'):
-        md += "## 2. BAZA RREGULLATORE & PËRPUTHSHMËRIA\n"
-        for lb in fiscal_data.get('legal_basis', []):
-            title = lb.get('title', 'Rregullore/Nen')
-            md += f"### {title}\n"
-            md += f"**Neni:** {lb.get('article', '')}\n\n"
-            md += f"**Ndikimi Fiskal:** {lb.get('relevance', '')}\n\n"
-        
-    # Section 3: Recommendations
-    md += "## 3. ANALIZA FINANCIARE & PLANI I VEPRIMIT\n"
-    md += f"{fiscal_data.get('strategic_analysis', '')}\n\n"
-    if fiscal_data.get('action_plan'):
-        md += "### HAPAT E REKOMANDUAR:\n"
-        for step in fiscal_data.get('action_plan', []):
-            md += f"* {step}\n"
-    
-    # Section 4: Audit Simulation
-    sim = audit_data.get('adversarial_simulation', {})
-    md += "\n---\n## 4. SIMULIMI I AUDITIMIT (ATK)\n"
-    md += f"### VËREJTJET E INSPEKTORIT\n{sim.get('opponent_strategy', 'Nuk u gjenerua.')}\n\n"
-    if sim.get('weakness_attacks'):
-        md += "### ANOMALITË E IDENTIFIKUARA\n"
-        for w in sim.get('weakness_attacks', []):
-            md += f"* {w}\n"
+    cleaned_md = re.sub(
+        r"^\s*(RASTI|BIZNESI|KLIENTI):\s*.*?DATA\s+E\s+GJENERIMIT:\s*\d{2}/\d{2}/\d{4}\s*$", 
+        "", 
+        raw_report_markdown, 
+        flags=re.IGNORECASE | re.MULTILINE
+    ).strip()
 
-    # Section 5: Transaction History
-    if audit_data.get('chronology'):
-        md += "\n## 5. HISTORIKU I TRANSAKSIONEVE\n"
-        for event in audit_data.get('chronology', []):
-            md += f"* **{event.get('date', '')}**: {event.get('event', '')}\n"
-
-    # Section 6: Anomalies
-    if audit_data.get('contradictions'):
-        md += "\n## 6. ANALIZA E ANOMALIVE\n"
-        for c in audit_data.get('contradictions', []):
-            severity = c.get('severity', 'LOW')
-            md += f"### Anomali: {severity}\n"
-            md += f"**Transaksioni:** {c.get('claim', '')}\n"
-            md += f"**Dokumenti/Prova:** {c.get('evidence', '')}\n"
-            md += f"**Impakti:** {c.get('impact', '')}\n\n"
-
-    # Generate PDF
-    try:
-        main_report_title = _get_text('analysis_title', lang)
-        pdf_buffer = report_service.create_pdf_from_text(
-            text=md,
-            document_title=main_report_title,
-            header_meta_content_html=None 
-        )
-        pdf_bytes = pdf_buffer.getvalue()
-    except Exception as e:
-        logger.error(f"Audit PDF generation failed: {e}")
-        return {"error": "Dështoi krijimi i raportit PDF."}
-
-    # Persist
-    archiver = archive_service.ArchiveService(db)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-    archive_item_title = f"{_get_text('analysis_title', lang)}: {case_name}"
-    filename = f"Raport_Fiskal_{case_name.replace(' ', '_')}_{timestamp}.pdf"
-    
-    try:
-        archive_item = await archiver.save_generated_file(
-            user_id=user_id,
-            filename=filename,
-            content=pdf_bytes,
-            category="CASE_FILE",
-            title=archive_item_title,
-            case_id=case_id
-        )
-        return {"status": "success", "item_id": str(archive_item.id)}
-    except Exception as e:
-        logger.error(f"Audit archiving failed: {e}")
-        return {"error": "Dështoi ruajtja e raportit në arkiv."}
+    return create_pdf_from_text(text=cleaned_md, document_title=main_title, header_meta_content_html=header_meta_html)

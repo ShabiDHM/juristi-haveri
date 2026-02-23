@@ -1,3 +1,10 @@
+// FILE: src/pages/DraftingPage.tsx
+// PHOENIX PROTOCOL - DRAFTING V22.0 (ACCOUNTING TRANSFORMATION)
+// 1. REFACTOR: Transformed Persona from 'Litigation Attorney' to 'Certified Accountant & Tax Advisor'.
+// 2. TEMPLATES: Removed Lawsuits (Padi). Added Tax Explanations, Financial Reports, and Audit Docs.
+// 3. UI: Updated all 'Case' terminology to 'Client / Business'.
+// 4. STATUS: 100% Accounting Aligned.
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { apiService } from '../services/api';
 import { useTranslation } from 'react-i18next';
@@ -6,8 +13,8 @@ import { Case } from '../data/types';
 import { useAuth } from '../context/AuthContext';
 import { 
   PenTool, Send, Copy, Download, RefreshCw, AlertCircle, CheckCircle, Clock, 
-  FileText, Trash2, Briefcase, ChevronDown, LayoutTemplate,
-  Lock, BrainCircuit, Archive, Calculator 
+  FileText, Trash2, Building2, ChevronDown, LayoutTemplate,
+  Lock, BrainCircuit, Archive, Calculator, ClipboardCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
@@ -16,8 +23,9 @@ import remarkGfm from 'remark-gfm';
 // --- TYPE DEFINITIONS ---
 type JobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 
+// Accounting-Focused Templates
 type TemplateType = 
-  | 'generic' | 'padi' | 'pergjigje' | 'kunderpadi' | 'ankese' | 'prapësim' 
+  | 'generic' | 'service_contract' | 'financial_report' | 'tax_explanation' | 'audit_report'
   | 'nda' | 'mou' | 'shareholders' | 'sla' 
   | 'employment_contract' | 'termination_notice' | 'warning_letter' 
   | 'terms_conditions' | 'privacy_policy' 
@@ -58,8 +66,8 @@ interface ResultPanelProps {
     onClear: () => void;
 }
 
-// --- KOSOVO COURT STYLING ENGINE ---
-const lawyerGradeStyles = `
+// --- PROFESSIONAL ACCOUNTING STYLING ENGINE ---
+const professionalDocumentStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
   .legal-document {
@@ -97,44 +105,44 @@ const lawyerGradeStyles = `
   .legal-content blockquote { border: none; margin: 3cm 0 0 50%; padding: 0; text-align: center; font-style: normal; font-weight: 700; }
 `;
 
-// --- AI PROMPT ENGINEERING ---
+// --- ACCOUNTING PROMPT ENGINEERING ---
 const constructSmartPrompt = (userText: string, template: TemplateType): string => {
-    let domainInstruction = "STATUTORY LAW OF KOSOVO.";
+    let domainInstruction = "FISCAL AND ACCOUNTING STANDARDS OF KOSOVO.";
     const lowerText = userText.toLowerCase();
     
-    if (['alimentacion', 'femij', 'martes', 'shkurorëzim', 'alimentacionin'].some(k => lowerText.includes(k))) {
-        domainInstruction = "DOMAIN: FAMILY LAW (Kosovo). MANDATORY CITATION: 'Ligji për Familjen i Kosovës'. FOCUS: Article 330 (Alimony) & Article 145 (Visitation).";
-    } else if (['shpk', 'aksion', 'biznes'].some(k => lowerText.includes(k))) {
-        domainInstruction = "DOMAIN: CORPORATE LAW (Kosovo). MANDATORY CITATION: 'Ligji për Shoqëritë Tregtare'.";
+    if (['tvsh', 'vat', 'deklarim', 'faturë'].some(k => lowerText.includes(k))) {
+        domainInstruction = "DOMAIN: TAXATION (Kosovo). MANDATORY CITATION: 'Ligji për TVSH-në' and 'Udhëzimet Administrative të ATK-së'.";
+    } else if (['audit', 'pasqyrë', 'bilanc'].some(k => lowerText.includes(k))) {
+        domainInstruction = "DOMAIN: FINANCIAL REPORTING. MANDATORY CITATION: 'Standardet Ndërkombëtare të Kontabilitetit (SNK)'.";
     }
 
-    let roleInstruction = "SENIOR LITIGATION ATTORNEY (Avokat i Specializuar).";
-    let goalInstruction = "Draft an aggressive, professional legal document. Do NOT summarize. ARGUE.";
+    let roleInstruction = "SENIOR CERTIFIED ACCOUNTANT & TAX ADVISOR.";
+    let goalInstruction = "Draft a precise, highly professional financial or compliance document. Focus on accuracy and regulatory adherence.";
 
-    if (template === 'pergjigje') {
-        roleInstruction = "DEFENSE ATTORNEY (Avokati i të Paditurit).";
-        goalInstruction = `MANDATE: PËRGJIGJE NË PADI. Challenge Plaintiff's claims as "të pabazuara". Use professional litigation rhetoric.`;
-    } else if (template === 'padi') {
-        roleInstruction = "PLAINTIFF'S ATTORNEY (Avokati i Paditësit).";
-        goalInstruction = "MANDATE: Draft a formal PADITË. Establish the legal basis and claim relief clearly.";
+    if (template === 'tax_explanation') {
+        roleInstruction = "TAX CONSULTANT.";
+        goalInstruction = `MANDATE: SHPJEGIM PËR ATK. Provide a technical, professional explanation addressing tax compliance issues based on Kosovo regulations.`;
+    } else if (template === 'financial_report') {
+        roleInstruction = "FINANCIAL AUDITOR.";
+        goalInstruction = "MANDATE: RAPORT FINANCIAR. Synthesize the provided data into a formal executive report including transaction summaries.";
     }
 
     const formatInstruction = `
-    FORMAT: PROFESSIONAL KOSOVO COURT STYLE. 
+    FORMAT: PROFESSIONAL A4 BUSINESS STYLE. 
     STYLING: Use **BOLD MARKDOWN** for SECTION TITLES. 
-    TONE: Professional Statutory Legal Albanian.
+    TONE: Technical, Professional, and Compliance-oriented Albanian.
     `;
 
     return `
     [SYSTEM MANDATE]
     ROLE: ${roleInstruction}
     GOAL: ${goalInstruction}
-    LEGAL SCOPE: ${domainInstruction}
+    DOMAIN SCOPE: ${domainInstruction}
     [/SYSTEM MANDATE]
 
     ${formatInstruction}
 
-    [USER INPUT DATA]
+    [INPUT DATA]
     ${userText}
     `;
 };
@@ -151,11 +159,11 @@ const ThinkingDots = () => (
 
 const preprocessHeadings = (text: string): string => {
     const lines = text.split('\n');
-    const knownSections = ['BAZA LIGJORE', 'ARSYETIMI', 'PETITUMI', 'KONKLUZIONI', 'VENDIM', 'NENET'];
+    const knownSections = ['BAZA RREGULLATORE', 'ARSYETIMI', 'TRANSAKSIONET', 'KONKLUZIONI', 'REKOMANDIME', 'NENET'];
     return lines.map(line => {
         const trimmed = line.trim();
         if (trimmed.length === 0) return line;
-        if (trimmed.toUpperCase().startsWith('NËNSHKRIMI') || trimmed.toUpperCase().startsWith('NENSHKRIMI')) return `> ${trimmed}`;
+        if (trimmed.toUpperCase().startsWith('PËRFAQËSUESI') || trimmed.toUpperCase().startsWith('KONTABILISTI')) return `> ${trimmed}`;
         const isUppercase = /^[A-ZËÇÜÖÄ\s\d\.,\-–—:]+$/.test(trimmed);
         if (!isUppercase) return line;
         const withoutColon = trimmed.replace(/:$/, '').toUpperCase();
@@ -169,7 +177,7 @@ const preprocessHeadings = (text: string): string => {
 
 const DraftResultRenderer: React.FC<{ text: string, t: TFunction }> = React.memo(({ text, t }) => {
     const processedText = preprocessHeadings(text);
-    const disclaimer = t('drafting.subtitle');
+    const disclaimer = t('drafting.systemDisclaimer', 'Ky dokument është gjeneruar nga AI. Sugjerohet rishikimi nga një kontabilist i certifikuar.');
     
     return (
         <div className="legal-document">
@@ -204,17 +212,17 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
 }) => (
     <div className="glass-panel flex flex-col h-auto lg:h-[700px] p-4 sm:p-6 rounded-2xl border border-white/10 shrink-0">
         <h3 className="text-white font-semibold mb-6 flex items-center gap-2">
-            <FileText className="text-primary-start" size={20} />{t('drafting.configuration')}
+            <ClipboardCheck className="text-primary-start" size={20} />{t('drafting.configuration')}
         </h3>
         <div className="flex flex-col gap-5 flex-1 min-h-0 overflow-hidden">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-shrink-0">
                 <div>
                     <div className="flex justify-between mb-1">
-                        <label className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">{t('drafting.caseLabel')}</label>
+                        <label className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">{t('drafting.caseLabel', 'Biznesi / Klienti')}</label>
                         {!isPro && <span className="text-[9px] text-secondary-start font-bold bg-secondary-start/10 px-1.5 rounded border border-secondary-start/20 flex items-center gap-1"><Lock size={8}/> PRO</span>}
                     </div>
                     <div className="relative">
-                        <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <select value={selectedCaseId} onChange={(e) => onSelectCase(e.target.value)} disabled={!isPro} className="glass-input w-full pl-10 pr-10 py-3.5 rounded-xl text-sm appearance-none outline-none">
                             <option value="">{t('drafting.noCaseSelected')}</option>
                             {cases.map((c: any) => <option key={c.id} value={c.id} className="bg-gray-900">{c.title || c.case_name}</option>)}
@@ -228,12 +236,11 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
                         <LayoutTemplate className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <select value={selectedTemplate} onChange={(e) => onSelectTemplate(e.target.value)} disabled={!isPro} className="glass-input w-full pl-10 pr-10 py-3.5 rounded-xl text-sm appearance-none outline-none">
                             <option value="generic">{t('drafting.templateGeneric')}</option>
-                            <optgroup label={t('drafting.groupLitigation')} className="bg-gray-900 italic">
-                                <option value="padi">{t('drafting.templatePadi')}</option>
-                                <option value="pergjigje">{t('drafting.templatePergjigje')}</option>
-                                <option value="kunderpadi">{t('drafting.templateKunderpadi')}</option>
-                                <option value="ankese">{t('drafting.templateAnkese')}</option>
-                                <option value="prapësim">{t('drafting.templatePrapesim')}</option>
+                            <optgroup label="Financiare & Taksa" className="bg-gray-900 italic">
+                                <option value="service_contract">{t('drafting.templatePadi', 'Kontratë Shërbimi')}</option>
+                                <option value="financial_report">{t('drafting.templatePergjigje', 'Raport Financiar')}</option>
+                                <option value="tax_explanation">{t('drafting.templateAnkese', 'Shpjegim për ATK')}</option>
+                                <option value="audit_report">{t('drafting.templatePrapesim', 'Raport Auditimi')}</option>
                             </optgroup>
                             <optgroup label={t('drafting.groupCorporate')} className="bg-gray-900 italic">
                                 <option value="nda">{t('drafting.templateNDA')}</option>
@@ -262,7 +269,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
             </div>
             <div className="flex-1 flex flex-col min-h-0">
                 <label className="block text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">{t('drafting.instructionsLabel')}</label>
-                <textarea value={context} onChange={(e) => onChangeContext(e.target.value)} placeholder={t('drafting.promptPlaceholder')} className="glass-input w-full p-4 rounded-xl text-sm flex-1 resize-none outline-none focus:ring-1 focus:ring-primary-start/40 transition-all overflow-y-auto custom-scrollbar font-mono placeholder:text-gray-600" />
+                <textarea value={context} onChange={(e) => onChangeContext(e.target.value)} placeholder={t('drafting.promptPlaceholder', 'Psh: Krijo një raport mujor për shpenzimet...')} className="glass-input w-full p-4 rounded-xl text-sm flex-1 resize-none outline-none focus:ring-1 focus:ring-primary-start/40 transition-all overflow-y-auto custom-scrollbar font-mono placeholder:text-gray-600" />
             </div>
             <button onClick={onSubmit} disabled={isSubmitting || !context.trim()} className="w-full py-4 bg-gradient-to-r from-primary-start to-primary-end text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-primary-start/20 hover:opacity-95 transition-all active:scale-[0.98] mt-4 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
               {isSubmitting ? <RefreshCw className="animate-spin" size={18} /> : <Send size={18} />}
@@ -372,8 +379,8 @@ const DraftingPage: React.FC = () => {
     const c = cases.find(item => item.id === caseId);
     if (c) {
         setContext(prev => {
-            const caseBlock = `[[TË_DHËNAT_E_RASTIT]]\n${t('drafting.caseRef', 'REFERENCA E RASTIT')}: ${c.title || c.case_number}\n${t('drafting.clientLabel', 'KLIENTI')}: ${c.client?.name || 'N/A'}\n${t('drafting.factsLabel', 'FAKTET')}: ${c.description || '-'}\n[[FUND_TË_DHËNAVE]]\n\n`;
-            if (prev.includes('[[TË_DHËNAT_E_RASTIT]]')) return prev.replace(/\[\[TË_DHËNAT_E_RASTIT\]\][\s\S]*?\[\[FUND_TË_DHËNAVE\]\]\s*/, caseBlock);
+            const caseBlock = `[[TË_DHËNAT_E_BIZNESIT]]\n${t('drafting.caseRef', 'BIZNESI')}: ${c.title || c.case_number}\n${t('drafting.clientLabel', 'PRONARI')}: ${c.client?.name || 'N/A'}\n${t('drafting.factsLabel', 'HISTORIKU')}: ${c.description || '-'}\n[[FUND_TË_DHËNAVE]]\n\n`;
+            if (prev.includes('[[TË_DHËNAT_E_BIZNESIT]]')) return prev.replace(/\[\[TË_DHËNAT_E_BIZNESIT\]\][\s\S]*?\[\[FUND_TË_DHËNAVE\]\]\s*/, caseBlock);
             return caseBlock + prev;
         });
     }
@@ -389,7 +396,7 @@ const DraftingPage: React.FC = () => {
       let finalPromptText = context.trim();
       if (isPro && selectedCaseId) {
           const selectedCase = cases.find(c => c.id === selectedCaseId);
-          if (selectedCase && !finalPromptText.includes('[[TË_DHËNAT_E_RASTIT]]')) {
+          if (selectedCase && !finalPromptText.includes('[[TË_DHËNAT_E_BIZNESIT]]')) {
              const hiddenContext = `\n\n[DATABASE DATA]\n${t('drafting.caseRef')}: ${selectedCase.title || selectedCase.case_number}\n${t('drafting.clientLabel')}: ${selectedCase.client?.name || 'N/A'}\n${t('drafting.factsLabel')}: ${selectedCase.description || 'N/A'}\n[END DATABASE DATA]\n`;
              finalPromptText = hiddenContext + finalPromptText;
           }
@@ -427,7 +434,7 @@ const DraftingPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 flex flex-col h-full lg:overflow-hidden overflow-y-auto">
-      <style>{lawyerGradeStyles}</style>
+      <style>{professionalDocumentStyles}</style>
       <div className="text-center mb-6 flex-shrink-0">
         <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center justify-center gap-3">
             <PenTool className="text-primary-start" />{t('drafting.title')}

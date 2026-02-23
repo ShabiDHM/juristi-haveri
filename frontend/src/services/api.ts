@@ -1,14 +1,14 @@
 // FILE: src/services/api.ts
-// PHOENIX PROTOCOL - API SERVICE V22.6 (ADDED GET LAW TITLES)
-// 1. ADDED: getLawTitles to fetch all distinct law titles for dropdown.
-// 2. RETAINED: All existing functionality.
+// PHOENIX PROTOCOL - API SERVICE V22.7 (ANALYSIS REMOVAL)
+// 1. REMOVED: All case analysis and deep analysis methods (analyzeCase, crossExamineDocument, deep analysis endpoints, archiveStrategyReport)
+// 2. RETAINED: Spreadsheet analysis, forensic analysis, and all other functionality.
 // 3. STATUS: 100% Pylance Clear.
 
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosHeaders } from 'axios';
 import type {
     LoginRequest, RegisterRequest, Case, CreateCaseRequest, Document, User, UpdateUserRequest,
     DeletedDocumentResponse, CalendarEvent, CalendarEventCreateRequest, CreateDraftingJobRequest,
-    DraftingJobStatus, DraftingJobResult, ChangePasswordRequest, CaseAnalysisResult, DeepAnalysisResult,
+    DraftingJobStatus, DraftingJobResult, ChangePasswordRequest,
     BusinessProfile, BusinessProfileUpdate, Invoice, InvoiceCreateRequest, InvoiceItem,
     ArchiveItemOut, CaseFinancialSummary, AnalyticsDashboardData, Expense, ExpenseCreateRequest, ExpenseUpdate,
     SpreadsheetAnalysisResult, Organization, AcceptInviteRequest, SubscriptionUpdate, PromoteRequest,
@@ -238,21 +238,7 @@ class ApiService {
     public async archiveCaseDocument(caseId: string, documentId: string): Promise<ArchiveItemOut> { const response = await this.axiosInstance.post<ArchiveItemOut>(`/cases/${caseId}/documents/${documentId}/archive`); return response.data; }
     public async renameDocument(caseId: string, docId: string, newName: string): Promise<void> { await this.axiosInstance.put(`/cases/${caseId}/documents/${docId}/rename`, { new_name: newName }); }
 
-    public async analyzeCase(caseId: string): Promise<CaseAnalysisResult> { const response = await this.axiosInstance.post<CaseAnalysisResult>(`/cases/${caseId}/analyze`); return response.data; }
-    
-    // --- DEEP ANALYSIS (PARALLEL READY) ---
-    public async analyzeDeepStrategy(caseId: string): Promise<DeepAnalysisResult> { const response = await this.axiosInstance.post<DeepAnalysisResult>(`/cases/${caseId}/deep-analysis`); return response.data; }
-    public async analyzeDeepSimulation(caseId: string): Promise<any> { const response = await this.axiosInstance.post<any>(`/cases/${caseId}/deep-analysis/simulation`); return response.data; }
-    public async analyzeDeepChronology(caseId: string): Promise<any[]> { const response = await this.axiosInstance.post<any[]>(`/cases/${caseId}/deep-analysis/chronology`); return response.data; }
-    public async analyzeDeepContradictions(caseId: string): Promise<any[]> { const response = await this.axiosInstance.post<any[]>(`/cases/${caseId}/deep-analysis/contradictions`); return response.data; }
-
-    public async archiveStrategyReport(caseId: string, legalData: any, deepData: any): Promise<{ status: string; item_id: string }> {
-        const response = await this.axiosInstance.post<{ status: string; item_id: string }>(`/cases/${caseId}/archive-strategy`, { legal_data: legalData, deep_data: deepData });
-        return response.data;
-    }
-
-    public async crossExamineDocument(caseId: string, documentId: string): Promise<CaseAnalysisResult> { const response = await this.axiosInstance.post<CaseAnalysisResult>(`/cases/${caseId}/documents/${documentId}/cross-examine`); return response.data; }
-    
+    // --- SPREADSHEET & FORENSIC ANALYSIS (KEPT) ---
     public async analyzeSpreadsheet(caseId: string, file: File): Promise<SpreadsheetAnalysisResult> {
         const formData = new FormData();
         formData.append('file', file);
@@ -329,14 +315,12 @@ class ApiService {
         return response.data;
     }
 
-    // --- NEW: Get all law titles for dropdown ---
     public async getLawTitles(): Promise<string[]> {
         const response = await this.axiosInstance.get('/laws/titles');
         return response.data;
     }
 
     // --- STREAMING AI METHODS ---
-
     public async *sendChatMessageStream(caseId: string, message: string, documentId?: string, jurisdiction?: string, mode: 'FAST' | 'DEEP' = 'FAST'): AsyncGenerator<string, void, unknown> {
         let token = tokenManager.get();
         if (!token) { await this.refreshToken(); token = tokenManager.get(); }
@@ -362,7 +346,6 @@ class ApiService {
     }
 
     // --- CALENDAR & BRIEFING ---
-
     public async getCalendarEvents(): Promise<CalendarEvent[]> { 
         const response = await this.axiosInstance.get<CalendarEvent[]>('/calendar/events'); 
         return response.data; 

@@ -1,31 +1,28 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - CASE VIEW V10.5 (LABEL ENFORCEMENT)
-// 1. REFACTOR: Changed translation key to 'analysis.analyzeClient' to force accounting label.
-// 2. UI: Adjusted Header layout for better spacing on 'Regjistruar' field.
-// 3. SEMANTIC: 'Analizo Klientin' is now the primary action.
-// 4. STATUS: 100% Accounting Workspace Aligned.
+// PHOENIX PROTOCOL - CASE VIEW V10.6 (ANALYSIS FEATURE REMOVAL)
+// 1. REMOVED: All analysis-related code (AnalysisModal, handleAnalyze, state, button)
+// 2. RETAINED: Core case viewing, document management, chat, and SpreadsheetAnalyst.
+// 3. STATUS: 100% Clean.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Case, Document, DeletedDocumentResponse, CaseAnalysisResult, ChatMessage } from '../data/types';
+import { Case, Document, DeletedDocumentResponse, ChatMessage } from '../data/types';
 import { apiService, API_V1_URL } from '../services/api';
 import DocumentsPanel from '../components/DocumentsPanel';
 import ChatPanel, { ChatMode, Jurisdiction, ReasoningMode } from '../components/ChatPanel';
 import PDFViewerModal from '../components/FileViewerModal';
-import AnalysisModal from '../components/AnalysisModal';
 import GlobalContextSwitcher from '../components/GlobalContextSwitcher';
 import SpreadsheetAnalyst from '../components/SpreadsheetAnalyst';
 import { useDocumentSocket } from '../hooks/useDocumentSocket';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, User, Loader2, X, Save, Calendar, Activity, Lock, Building2, ClipboardCheck } from 'lucide-react';
+import { AlertCircle, User, Loader2, X, Save, Calendar, Activity, Lock, Building2 } from 'lucide-react';
 import { sanitizeDocument } from '../utils/documentUtils';
 import { TFunction } from 'i18next';
 import DockedPDFViewer from '../components/DockedPDFViewer';
 
 type CaseData = { details: Case | null; };
-type ActiveModal = 'none' | 'analysis';
 type ViewMode = 'workspace' | 'analyst';
 
 const extractAndNormalizeHistory = (data: any): ChatMessage[] => {
@@ -72,19 +69,11 @@ const CaseHeader: React.FC<{
     activeContextId: string;
     onContextChange: (id: string) => void;
     t: TFunction; 
-    onAnalyze: () => void;
-    isAnalyzing: boolean; 
     viewMode: ViewMode;
     setViewMode: (mode: ViewMode) => void;
     isPro: boolean; 
     isAdmin: boolean;
-}> = ({ caseDetails, documents, activeContextId, onContextChange, t, onAnalyze, isAnalyzing, viewMode, setViewMode, isPro, isAdmin }) => {
-    
-    // FORCED: Using accounting-specific keys to bypass old legal translations
-    const analyzeButtonText = activeContextId === 'general' 
-        ? t('analysis.analyzeClient', 'Analizo Klientin')
-        : t('analysis.verifyDocument', 'Verifiko me Dokument');
-
+}> = ({ caseDetails, documents, activeContextId, onContextChange, t, viewMode, setViewMode, isPro, isAdmin }) => {
     return (
         <motion.div className="relative mb-6 group" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
           <div className="absolute inset-0 rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
@@ -107,7 +96,7 @@ const CaseHeader: React.FC<{
 
               <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
-              <div className={`grid grid-cols-1 gap-3 w-full animate-in fade-in slide-in-from-top-2 ${isAdmin ? 'md:grid-cols-4' : 'md:grid-cols-4'}`}>
+              <div className={`grid grid-cols-1 gap-3 w-full animate-in fade-in slide-in-from-top-2 ${isAdmin ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
                     <div className="md:col-span-1 flex items-center justify-center gap-2 px-3 h-12 md:h-11 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-[9px] font-black uppercase tracking-widest overflow-hidden">
                         <Calendar className="h-4 w-4 text-primary-start shrink-0" />
                         <span className="truncate">Regjistruar: {new Date(caseDetails.created_at).toLocaleDateString()}</span>
@@ -117,16 +106,6 @@ const CaseHeader: React.FC<{
                     <button onClick={() => isPro && setViewMode(viewMode === 'workspace' ? 'analyst' : 'workspace')} disabled={!isPro} className={`md:col-span-1 h-12 md:h-11 rounded-xl flex items-center justify-center gap-2.5 text-[10px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap border ${!isPro ? 'bg-white/5 border-white/10 text-gray-500 cursor-not-allowed opacity-70' : viewMode === 'analyst' ? 'bg-primary-start/20 border-primary-start text-white' : 'text-gray-400 border-transparent hover:text-white hover:bg-white/5'}`} title={!isPro ? "Available on Pro Plan" : ""}>
                         {!isPro ? <Lock className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
                         <span>{t('caseView.financialAnalyst', 'Analisti Financiar')}</span>
-                    </button>
-
-                    <button onClick={onAnalyze} disabled={!isPro || isAnalyzing || viewMode !== 'workspace'} className={`md:col-span-1 h-12 md:h-11 rounded-xl flex items-center justify-center gap-2.5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg transition-all duration-300 whitespace-nowrap border border-transparent ${!isPro ? 'bg-gray-700/50 cursor-not-allowed text-gray-400 shadow-none' : 'bg-primary-start hover:bg-primary-end shadow-primary-start/20'} disabled:opacity-70`} type="button" title={!isPro ? "Available on Pro Plan" : ""}>
-                        {isAnalyzing ? (
-                            <><Loader2 className="h-4 w-4 animate-spin text-white/70" /> <span className="text-white/70">{t('analysis.analyzing', 'Duke analizuar...')}</span></>
-                        ) : !isPro ? (
-                            <><Lock className="h-4 w-4" /> <span>{analyzeButtonText}</span></>
-                        ) : (
-                            <><ClipboardCheck className="h-4 w-4" /> <span>{analyzeButtonText}</span></>
-                        )}
                     </button>
               </div>
           </div>
@@ -145,9 +124,6 @@ const CaseViewPage: React.FC = () => {
   const [viewingDocument, setViewingDocument] = useState<Document | null>(null);
   const [minimizedDocument, setMinimizedDocument] = useState<Document | null>(null);
   const [viewingUrl, setViewingUrl] = useState<string | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<CaseAnalysisResult | null>(null);
-  const [activeModal, setActiveModal] = useState<ActiveModal>('none');
   const [documentToRename, setDocumentToRename] = useState<Document | null>(null);
   const [activeContextId, setActiveContextId] = useState<string>('general');
   const [viewMode, setViewMode] = useState<ViewMode>('workspace');
@@ -184,7 +160,6 @@ const CaseViewPage: React.FC = () => {
   const handleDocumentUploaded = (newDoc: Document) => { setLiveDocuments(prev => [sanitizeDocument(newDoc), ...prev]); };
   const handleDocumentDeleted = (response: DeletedDocumentResponse) => { setLiveDocuments(prev => prev.filter(d => String(d.id) !== String(response.documentId))); };
   const handleClearChat = async () => { if (!caseId) return; try { await apiService.clearChatHistory(caseId); setMessages([]); localStorage.removeItem(`chat_history_${currentCaseId}`); } catch (err) { alert(t('error.generic')); } };
-  const handleAnalyze = async () => { if (!caseId) return; setIsAnalyzing(true); setActiveModal('none'); try { let result: CaseAnalysisResult; if (activeContextId === 'general') { result = await apiService.analyzeCase(caseId); } else { result = await apiService.crossExamineDocument(caseId, activeContextId); } if (result.error) alert(result.error); else { setAnalysisResult(result); setActiveModal('analysis'); } } catch (err) { alert(t('error.generic')); } finally { setIsAnalyzing(false); } };
   const handleChatSubmit = (text: string, _mode: ChatMode, reasoning: ReasoningMode, documentId?: string, jurisdiction?: Jurisdiction) => { sendChatMessage(text, reasoning, documentId, jurisdiction); };
   const handleViewOriginal = (doc: Document) => { const url = `${API_V1_URL}/cases/${caseId}/documents/${doc.id}/preview`; setViewingUrl(url); setViewingDocument(doc); setMinimizedDocument(null); };
   const handleCloseViewer = () => { setViewingDocument(null); setViewingUrl(null); };
@@ -205,8 +180,6 @@ const CaseViewPage: React.FC = () => {
                 activeContextId={activeContextId} 
                 onContextChange={setActiveContextId}
                 t={t} 
-                onAnalyze={handleAnalyze} 
-                isAnalyzing={isAnalyzing} 
                 viewMode={viewMode}
                 setViewMode={setViewMode}
                 isPro={isPro}
@@ -229,7 +202,6 @@ const CaseViewPage: React.FC = () => {
       </div>
       {viewingDocument && (<PDFViewerModal documentData={viewingDocument} caseId={caseData.details.id} onClose={handleCloseViewer} onMinimize={handleMinimizeViewer} t={t} directUrl={viewingUrl} isAuth={true} />)}
       {minimizedDocument && <DockedPDFViewer document={minimizedDocument} onExpand={handleExpandViewer} onClose={() => setMinimizedDocument(null)} />}
-      {analysisResult && (<AnalysisModal isOpen={activeModal === 'analysis'} onClose={() => setActiveModal('none')} result={analysisResult} caseId={currentCaseId} />)}
       <RenameDocumentModal isOpen={!!documentToRename} onClose={() => setDocumentToRename(null)} onRename={handleRename} currentName={documentToRename?.file_name || ''} t={t} />
     </motion.div>
   );

@@ -1,9 +1,8 @@
 # FILE: backend/app/services/llm_service.py
-# PHOENIX PROTOCOL - CORE INTELLIGENCE V71.0 (ACCOUNTING TRANSFORMATION)
-# 1. REFACTOR: Transformed Universal Persona from 'Legal Partner' to 'Senior Certified Accountant & Tax Advisor'.
-# 2. REFACTOR: Adversarial Simulation updated to 'ATK Auditor Simulation'.
-# 3. REFACTOR: Contradiction Detection updated to 'Financial Anomaly Detection'.
-# 4. STATUS: 100% Accounting Aligned. Core intelligence synchronized.
+# PHOENIX PROTOCOL - CORE INTELLIGENCE V71.1 (LEGACY ALIASES REMOVED)
+# 1. REMOVED: Legacy sync aliases for deep analysis (generate_adversarial_simulation, detect_contradictions, build_case_chronology).
+# 2. RETAINED: All accounting‑focused async functions (audit simulation, anomaly detection, financial chronology).
+# 3. STATUS: 100% Accounting Aligned. Core intelligence synchronized.
 
 import os, json, logging, re, asyncio
 from typing import List, Dict, Any, Optional, AsyncGenerator
@@ -13,7 +12,7 @@ from .text_sterilization_service import sterilize_text_for_llm
 
 logger = logging.getLogger(__name__)
 
-# --- UNABRIDGED EXPORT LIST ---
+# --- UNABRIDGED EXPORT LIST (legacy aliases removed) ---
 __all__ = [
     "analyze_financial_portfolio", "analyze_business_integrity", "generate_audit_simulation",
     "build_financial_history", "translate_for_client", "detect_accounting_anomalies",
@@ -218,17 +217,5 @@ def translate_for_client(t: str) -> str:
 def query_global_rag_for_claims(r: str, q: str) -> Dict[str, Any]:
     return _parse_json_safely(_call_llm("Gjej bazën rregullatore në SHQIP me [Rregulloren](doc://ligji). JSON.", f"RAG: {r}\nQ: {q}", True))
 
-def generate_adversarial_simulation(context: str) -> Dict[str, Any]:
-    """Legacy alias for generate_audit_simulation."""
-    import asyncio
-    return asyncio.run(generate_audit_simulation(context))
-
-def detect_contradictions(text: str) -> Dict[str, Any]:
-    """Legacy alias for detect_accounting_anomalies."""
-    import asyncio
-    return asyncio.run(detect_accounting_anomalies(text))
-
-def build_case_chronology(text: str) -> Dict[str, Any]:
-    """Legacy alias for build_financial_history."""
-    import asyncio
-    return asyncio.run(build_financial_history(text))
+# --- Legacy aliases (removed) ---
+# generate_adversarial_simulation, detect_contradictions, build_case_chronology have been removed.

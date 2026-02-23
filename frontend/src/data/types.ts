@@ -1,7 +1,8 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TOTAL SYSTEM SYNCHRONIZATION V29.4 (ACCOUNTING TRIAGE ALIGNMENT)
-// 1. REFACTOR: Updated RiskAlert 'level' union to match new accounting backend statuses (CRITICAL/IMPORTANT/ROUTINE).
-// 2. STATUS: Type Clean. Dashboard Radar compilation errors resolved.
+// PHOENIX PROTOCOL - TOTAL SYSTEM SYNCHRONIZATION V29.5 (ANALYSIS REMOVAL)
+// 1. REMOVED: CaseAnalysisResult, DeepAnalysisResult, ChronologyEvent, Contradiction, AdversarialSimulation (all analysis-related types)
+// 2. RETAINED: All accounting, finance, organization, and other types.
+// 3. STATUS: Type Clean.
 
 import { AccountType, SubscriptionTier, ProductPlan } from './enums';
 
@@ -53,7 +54,6 @@ export interface AcceptInviteRequest { token: string; username: string; password
 export interface RiskAlert {
     id: string;
     title: string;
-    // UPDATED: Aligned with new Accounting/Tax risk levels from backend
     level: 'LEVEL_1_CRITICAL' | 'LEVEL_2_IMPORTANT' | 'LEVEL_3_ROUTINE';
     seconds_remaining: number;
     effective_deadline: string;
@@ -100,7 +100,7 @@ export interface BusinessProfileUpdate {
     currency?: string; 
 }
 
-// --- 4. CASE MANAGEMENT & LEGAL ANALYSIS ---
+// --- 4. CASE MANAGEMENT (ANALYSIS-RELATED TYPES REMOVED) ---
 export interface Case { 
     id: string; 
     case_number: string; 
@@ -130,23 +130,6 @@ export interface CreateCaseRequest {
     clientEmail?: string; 
     clientPhone?: string; 
     status?: string; 
-}
-
-export interface CaseAnalysisResult { 
-    summary?: string; 
-    key_issues?: string[]; 
-    legal_basis?: (string | { law?: string; article?: string; relevance?: string; title?: string; argument?: string })[]; 
-    strategic_analysis?: string; 
-    weaknesses?: string[]; 
-    action_plan?: string[]; 
-    risk_level?: string; 
-    success_probability?: string;
-    burden_of_proof?: string; 
-    missing_evidence?: string[]; 
-    red_flags?: string[]; 
-    contradictions?: string[]; 
-    chronology?: ChronologyEvent[]; 
-    error?: string; 
 }
 
 // --- 5. DOCUMENTS & ARCHIVE ---
@@ -316,7 +299,7 @@ export interface AnalyticsDashboardData {
     total_profit_period?: number; 
 }
 
-// --- 8. FORENSIC ANALYSIS ---
+// --- 8. FORENSIC ANALYSIS (KEPT) ---
 export interface EnhancedAnomaly { 
     date: string;
     amount: number;
@@ -341,27 +324,8 @@ export interface SpreadsheetAnalysisResult {
     processed_at: string; 
 }
 
-// --- 9. LEGAL STRATEGY (WAR ROOM) ---
-export interface ChronologyEvent { date: string; event: string; source_doc?: string; source?: string; }
-export interface AdversarialSimulation { 
-    opponent_strategy: string; 
-    weakness_attacks: string[]; 
-    counter_claims: string[]; 
-    predicted_outcome?: string; 
-}
-export interface Contradiction { 
-    claim: string; 
-    evidence: string; 
-    severity: 'HIGH' | 'MEDIUM' | 'LOW'; 
-    impact: string; 
-}
-
-export interface DeepAnalysisResult { 
-    adversarial_simulation: AdversarialSimulation; 
-    chronology: ChronologyEvent[]; 
-    contradictions: Contradiction[]; 
-    error?: string; 
-}
+// --- 9. LEGAL STRATEGY (REMOVED) ---
+// (All analysis-related types removed)
 
 // --- 10. ORGANIZATIONS & SaaS ---
 export interface Organization { 

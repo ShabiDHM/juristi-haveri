@@ -1,8 +1,9 @@
 # FILE: backend/app/api/endpoints/cases.py
-# PHOENIX PROTOCOL - CASES ROUTER V27.0 (PYLANCE & DEPTH FIX)
-# 1. FIXED: Corrected import depth (...models) for 3-level deep endpoint structure.
-# 2. INTEGRITY: Maintains all protected document, analysis, and portal logic.
-# 3. STATUS: 100% Pylance clean.
+# PHOENIX PROTOCOL - CASES ROUTER V27.2 (ANALYSIS & EVIDENCE MAP REMOVED)
+# 1. REMOVED: All analysis endpoints (/analyze, /deep-analysis/*, /archive-strategy)
+# 2. REMOVED: Evidence map endpoints (/evidence-map, /extract-map) and graph_service import
+# 3. RETAINED: Core case management, documents, public portal, forensic endpoints, drafts
+# 4. STATUS: 100% Pylance clean.
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Body
 from typing import List, Annotated, Dict, Any
@@ -17,21 +18,20 @@ import logging
 import io
 from datetime import datetime, timezone
 
-# --- SERVICE IMPORTS (3 dots to reach app/services) ---
+# --- SERVICE IMPORTS ---
 from ...services import (
     case_service,
     document_service,
     storage_service,
-    analysis_service,
     archive_service,
     pdf_service,
     drafting_service,
     spreadsheet_service,
-    llm_service
+    # analysis_service removed
+    # graph_service removed
 )
-from ...services.graph_service import graph_service
 
-# --- MODEL IMPORTS (3 dots to reach app/models) ---
+# --- MODEL IMPORTS ---
 from ...models.case import CaseCreate, CaseOut
 from ...models.user import UserInDB, SubscriptionTier
 from ...models.drafting import DraftRequest
@@ -82,10 +82,6 @@ class RenameDocumentRequest(BaseModel):
 
 class FinanceInterrogationRequest(BaseModel):
     question: str
-
-class ArchiveStrategyRequest(BaseModel):
-    legal_data: Dict[str, Any]
-    deep_data: Dict[str, Any]
 
 # --- CORE CASE ENDPOINTS ---
 
@@ -296,10 +292,7 @@ async def delete_document(
         owner=current_user
     )
     if result.get("deleted_count", 0) > 0:
-        try:
-            await asyncio.to_thread(graph_service.delete_node, doc_id)
-        except Exception:
-            pass
+        # Note: graph_service deletion of node is removed as evidence map is gone
         return DeletedDocumentResponse(
             documentId=doc_id,
             deletedFindingIds=result.get("deleted_finding_ids", [])
@@ -363,120 +356,9 @@ async def archive_document_endpoint(
     )
     return ArchiveItemOut.model_validate(archived_item)
 
-# --- EVIDENCE MAP ---
+# --- EVIDENCE MAP ENDPOINTS REMOVED ---
 
-@router.get("/{case_id}/evidence-map")
-async def get_evidence_map(
-    case_id: str,
-    current_user: Annotated[UserInDB, Depends(get_current_user)]
-):
-    validate_object_id(case_id)
-    raw_graph = await asyncio.to_thread(graph_service.get_case_graph, case_id)
-    return {
-        "nodes": raw_graph.get("nodes", []),
-        "links": raw_graph.get("links", [])
-    }
-
-@router.post("/{case_id}/extract-map", status_code=status.HTTP_202_ACCEPTED)
-async def trigger_map_extraction(
-    case_id: str,
-    current_user: Annotated[UserInDB, Depends(get_current_user)],
-    db: Database = Depends(get_db)
-):
-    validate_object_id(case_id)
-    success = await asyncio.to_thread(
-        analysis_service.build_and_populate_graph,
-        db,
-        case_id,
-        str(current_user.id)
-    )
-    if not success:
-        raise HTTPException(status_code=500, detail="AI Extraction failed.")
-    return {"status": "success"}
-
-# --- ANALYSIS & STRATEGY ---
-
-@router.post("/{case_id}/analyze")
-async def run_textual_case_analysis(
-    case_id: str,
-    current_user: Annotated[UserInDB, Depends(get_current_user)],
-    db: Database = Depends(get_db)
-):
-    validate_object_id(case_id)
-    return JSONResponse(
-        await analysis_service.cross_examine_case(db, case_id, str(current_user.id))
-    )
-
-@router.post("/{case_id}/deep-analysis", dependencies=[Depends(require_pro_tier)])
-async def run_deep_case_analysis(
-    case_id: str,
-    current_user: Annotated[UserInDB, Depends(get_current_user)],
-    db: Database = Depends(get_db)
-):
-    validate_object_id(case_id)
-    result = await analysis_service.run_deep_strategy(db, case_id, str(current_user.id))
-    if result.get("error"):
-        raise HTTPException(status_code=400, detail=result["error"])
-    return JSONResponse(result)
-
-@router.post("/{case_id}/deep-analysis/simulation", dependencies=[Depends(require_pro_tier)])
-async def run_deep_simulation_only(
-    case_id: str,
-    current_user: Annotated[UserInDB, Depends(get_current_user)],
-    db: Database = Depends(get_db)
-):
-    if not analysis_service.authorize_case_access(db, case_id, str(current_user.id)):
-        raise HTTPException(status_code=403)
-    context = await analysis_service._fetch_rag_context_async(
-        db, case_id, str(current_user.id), include_laws=True
-    )
-    res = await llm_service.generate_adversarial_simulation(context)
-    return JSONResponse(res)
-
-@router.post("/{case_id}/deep-analysis/chronology", dependencies=[Depends(require_pro_tier)])
-async def run_deep_chronology_only(
-    case_id: str,
-    current_user: Annotated[UserInDB, Depends(get_current_user)],
-    db: Database = Depends(get_db)
-):
-    if not analysis_service.authorize_case_access(db, case_id, str(current_user.id)):
-        raise HTTPException(status_code=403)
-    context = await analysis_service._fetch_rag_context_async(
-        db, case_id, str(current_user.id), include_laws=False
-    )
-    res = await llm_service.build_case_chronology(context)
-    return JSONResponse(res.get("timeline", []))
-
-@router.post("/{case_id}/deep-analysis/contradictions", dependencies=[Depends(require_pro_tier)])
-async def run_deep_contradictions_only(
-    case_id: str,
-    current_user: Annotated[UserInDB, Depends(get_current_user)],
-    db: Database = Depends(get_db)
-):
-    if not analysis_service.authorize_case_access(db, case_id, str(current_user.id)):
-        raise HTTPException(status_code=403)
-    context = await analysis_service._fetch_rag_context_async(
-        db, case_id, str(current_user.id), include_laws=True
-    )
-    res = await llm_service.detect_contradictions(context)
-    return JSONResponse(res.get("contradictions", []))
-
-@router.post("/{case_id}/archive-strategy", dependencies=[Depends(require_pro_tier)])
-async def archive_case_strategy_endpoint(
-    case_id: str,
-    body: ArchiveStrategyRequest,
-    current_user: Annotated[UserInDB, Depends(get_current_user)],
-    db: Database = Depends(get_db)
-):
-    validate_object_id(case_id)
-    result = await analysis_service.archive_full_strategy_report(
-        db, case_id, str(current_user.id), body.legal_data, body.deep_data
-    )
-    if result.get("error"):
-        raise HTTPException(status_code=500, detail=result["error"])
-    return JSONResponse(result)
-
-# --- FORENSIC & DRAFTS ---
+# --- FORENSIC & DRAFTS (KEPT) ---
 
 @router.post("/{case_id}/analyze/spreadsheet/forensic", dependencies=[Depends(require_pro_tier)])
 async def analyze_forensic_spreadsheet_endpoint(

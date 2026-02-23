@@ -1,8 +1,8 @@
 // FILE: src/pages/CaseViewPage.tsx
-// PHOENIX PROTOCOL - CASE VIEW V10.3 (ACCOUNTING WORKSPACE ALIGNMENT)
-// 1. REFACTOR: Header labels changed from "Legal Case" to "Client / Business Profile".
-// 2. SEMANTIC: "Cross-examine" logic renamed to "Verify/Compare" for accounting accuracy.
-// 3. UI: Integrated 'Building2' icon for corporate identity.
+// PHOENIX PROTOCOL - CASE VIEW V10.5 (LABEL ENFORCEMENT)
+// 1. REFACTOR: Changed translation key to 'analysis.analyzeClient' to force accounting label.
+// 2. UI: Adjusted Header layout for better spacing on 'Regjistruar' field.
+// 3. SEMANTIC: 'Analizo Klientin' is now the primary action.
 // 4. STATUS: 100% Accounting Workspace Aligned.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -80,10 +80,10 @@ const CaseHeader: React.FC<{
     isAdmin: boolean;
 }> = ({ caseDetails, documents, activeContextId, onContextChange, t, onAnalyze, isAnalyzing, viewMode, setViewMode, isPro, isAdmin }) => {
     
-    // Accounting labels for buttons
+    // FORCED: Using accounting-specific keys to bypass old legal translations
     const analyzeButtonText = activeContextId === 'general' 
-        ? t('analysis.analyzeButton', 'Analizo Klientin')
-        : t('analysis.crossExamineButton', 'Verifiko me Dokument');
+        ? t('analysis.analyzeClient', 'Analizo Klientin')
+        : t('analysis.verifyDocument', 'Verifiko me Dokument');
 
     return (
         <motion.div className="relative mb-6 group" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
@@ -108,10 +108,9 @@ const CaseHeader: React.FC<{
               <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
               <div className={`grid grid-cols-1 gap-3 w-full animate-in fade-in slide-in-from-top-2 ${isAdmin ? 'md:grid-cols-4' : 'md:grid-cols-4'}`}>
-                    <div className="md:col-span-1 flex items-center justify-center gap-2 px-4 h-12 md:h-11 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-[10px] font-black uppercase tracking-widest">
-                        <Calendar className="h-4 w-4 text-primary-start" />
-                        <span className="mr-1">Regjistruar:</span>
-                        {new Date(caseDetails.created_at).toLocaleDateString()}
+                    <div className="md:col-span-1 flex items-center justify-center gap-2 px-3 h-12 md:h-11 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-[9px] font-black uppercase tracking-widest overflow-hidden">
+                        <Calendar className="h-4 w-4 text-primary-start shrink-0" />
+                        <span className="truncate">Regjistruar: {new Date(caseDetails.created_at).toLocaleDateString()}</span>
                     </div>
                     <div className="md:col-span-1 h-12 md:h-11 min-w-0">{viewMode === 'workspace' && (<GlobalContextSwitcher documents={documents} activeContextId={activeContextId} onContextChange={onContextChange} className="w-full h-full" />)}</div>
                     

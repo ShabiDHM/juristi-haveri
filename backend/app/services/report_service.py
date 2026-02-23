@@ -1,9 +1,8 @@
 # FILE: backend/app/services/report_service.py
-# PHOENIX PROTOCOL - REPORT SERVICE V7.0 (ACCOUNTING TRANSFORMATION)
-# 1. REFACTOR: Branding changed to "Kontabilisti AI" and headers to "Analiza e Biznesit".
-# 2. SEMANTIC: Evidence maps transformed into "Transaction Verification Reports".
-# 3. FIX: Regex updated to strip "BIZNESI:"/ "KLIENTI:" headers from AI generated content.
-# 4. STATUS: 100% Accounting Aligned.
+# PHOENIX PROTOCOL - REPORT SERVICE V7.1 (ACCOUNTING TRANSFORMATION, ANALYSIS REMOVED)
+# 1. REMOVED: generate_business_analysis_report (part of removed analysis feature)
+# 2. RETAINED: Invoice PDF generation and generic create_pdf_from_text utility.
+# 3. STATUS: 100% Accounting Aligned, analysis‑free.
 
 import io
 import os
@@ -56,6 +55,7 @@ STYLES.add(ParagraphStyle(name='FirmName', parent=STYLES['h3'], alignment=TA_RIG
 STYLES.add(ParagraphStyle(name='FirmMeta', parent=STYLES['Normal'], alignment=TA_RIGHT, fontSize=9, textColor=COLOR_SECONDARY_TEXT, leading=12))
 
 # --- TRANSLATIONS (ACCOUNTING FOCUSED) ---
+# Removed keys only used by analysis (analysis_title, report_case_label)
 TRANSLATIONS = {
     "sq": {
         "invoice_title": "FATURA", "invoice_num": "Nr.", "date_issue": "Data e Lëshimit", "date_due": "Afati i Pagesës",
@@ -63,7 +63,7 @@ TRANSLATIONS = {
         "total": "Totali", "subtotal": "Nëntotali", "tax": "TVSH (18%)", "notes": "Shënime",
         "footer_gen": "Dokument i gjeneruar nga", "page": "Faqe", 
         "lbl_address": "Adresa:", "lbl_tel": "Tel:", "lbl_email": "Email:", "lbl_web": "Web:", "lbl_nui": "NUI:",
-        # Fiscal Transaction Map
+        # Fiscal Transaction Map (kept for potential future use)
         "map_report_title": "Raporti i Verifikimit të Transaksioneve",
         "map_case_id": "ID e Biznesit:",
         "map_section_claims": "Transaksionet dhe Shënimet Kontabël",
@@ -76,9 +76,6 @@ TRANSLATIONS = {
         "map_rel_contradicts": "Anomali",
         "map_rel_related": "Ndërlidhet me",
         "map_notes": "Vërejtje: ",
-        # Audit Analysis
-        "analysis_title": "Analiza e Biznesit",
-        "report_case_label": "Biznesi:"
     }
 }
 
@@ -289,18 +286,4 @@ def create_pdf_from_text(text: str, document_title: str, header_meta_content_htm
     buffer.seek(0)
     return buffer
 
-def generate_business_analysis_report(business_title: str, raw_report_markdown: str, lang: str = "sq") -> io.BytesIO:
-    """Generates a Fiscal Audit Report with specific business metadata."""
-    main_title = _get_text('analysis_title', lang)
-    display_title = business_title if business_title and business_title.strip() != "" else "Pa Titull"
-    header_meta_html = f"<h2 class='report-meta'>{_get_text('report_case_label', lang)} {escape(display_title)}</h2>"
-    
-    # Regex updated to catch "BIZNESI:" or "KLIENTI:" or legacy "RASTI:"
-    cleaned_md = re.sub(
-        r"^\s*(RASTI|BIZNESI|KLIENTI):\s*.*?DATA\s+E\s+GJENERIMIT:\s*\d{2}/\d{2}/\d{4}\s*$", 
-        "", 
-        raw_report_markdown, 
-        flags=re.IGNORECASE | re.MULTILINE
-    ).strip()
-
-    return create_pdf_from_text(text=cleaned_md, document_title=main_title, header_meta_content_html=header_meta_html)
+# Removed generate_business_analysis_report (analysis case feature)

@@ -23,6 +23,7 @@ from . import (
     user_service,
     vector_store_service,
     spreadsheet_service,
+    graph_service,
     
     # PHOENIX NEW SERVICES
     archive_service,
@@ -30,6 +31,7 @@ from . import (
     pdf_service,
     social_service,
     organization_service,  
+    
     
     # Albanian Specific Services
     albanian_document_processor,

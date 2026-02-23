@@ -1,15 +1,16 @@
 // FILE: src/components/CaseCard.tsx
-// PHOENIX PROTOCOL - CASE CARD V6.0 (SEMANTIC FIX)
-// 1. FIX: Removed invalid <button> inside <a> nesting. The card is now a <div>.
-// 2. LOGIC: Navigation is handled via onClick on the container, ignored if the delete button is clicked.
-// 3. UI: Preserved all hover effects and animations while fixing the interaction model.
+// PHOENIX PROTOCOL - CASE CARD V7.0 (ACCOUNTING TRANSFORMATION)
+// 1. REFACTOR: Transformed UI from "Legal Case" to "Client / Business Profile".
+// 2. ICONS: Swapped generic icons for Financial/Business icons (Building, Receipt, Calculator).
+// 3. LOGIC: Highlighted Company Name and Fiscal details.
+// 4. STATUS: 100% Accounting Aligned.
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Case } from '../data/types';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Trash2, FileText, AlertTriangle, CalendarDays, User, Mail, Phone } from 'lucide-react';
+import { Trash2, Receipt, AlertTriangle, Calculator, Building2, Mail, Phone, TrendingUp } from 'lucide-react';
 
 interface CaseCardProps {
   caseData: Case;
@@ -25,7 +26,7 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, onDelete }) => {
   };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Stop event from triggering the card navigation
+    e.stopPropagation(); 
     onDelete(caseData.id);
   };
 
@@ -40,13 +41,14 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, onDelete }) => {
     year: 'numeric'
   }).replace(/\//g, '.');
 
+  // Logic: In Accounting, "Title" is usually the Company Name
   const hasTitle = caseData.title && caseData.title.trim() !== '';
-  const displayTitle = hasTitle ? caseData.title : (t('caseView.unnamedCase') || 'Rast pa Emër');
+  const displayTitle = hasTitle ? caseData.title : (t('caseView.unnamedCase', 'Klient pa Emër'));
 
   return (
     <motion.div 
       onClick={handleCardClick}
-      className="glass-panel group relative flex flex-col justify-between h-full p-6 rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-pointer"
+      className="glass-panel group relative flex flex-col justify-between h-full p-6 rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl cursor-pointer border border-white/5 hover:border-primary-start/30"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
@@ -55,44 +57,47 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, onDelete }) => {
       <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary-start/5 to-secondary-end/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
       <div>
-        {/* Header Section */}
+        {/* Header Section: Company Identity */}
         <div className="flex flex-col mb-4 relative z-10">
           <div className="flex justify-between items-start gap-2">
             <div className="flex flex-col">
-                <h2 className={`text-xl font-bold line-clamp-2 leading-tight tracking-tight ${!hasTitle ? 'text-text-secondary italic' : 'text-white group-hover:text-primary-start transition-colors'}`}>
+                <div className="flex items-center gap-2 mb-1">
+                    <Building2 className="w-4 h-4 text-primary-start" />
+                    <span className="text-[10px] font-bold text-primary-start uppercase tracking-widest">{t('caseCard.companyLabel', 'KOMPANIA / KLIENTI')}</span>
+                </div>
+                <h2 className={`text-lg font-black line-clamp-2 leading-tight tracking-tight uppercase ${!hasTitle ? 'text-text-secondary italic' : 'text-white group-hover:text-primary-start transition-colors'}`}>
                     {displayTitle}
                 </h2>
             </div>
           </div>
           
-          <div className="flex items-center gap-2 mt-3">
-            <p className="text-sm text-text-secondary font-medium">
-                Krijuar më: <span className="text-gray-300">{formattedDate}</span>
+          <div className="flex items-center gap-2 mt-2">
+            <p className="text-[10px] text-text-secondary font-bold uppercase tracking-wider opacity-60">
+                Regjistruar: <span className="text-white">{formattedDate}</span>
             </p>
           </div>
         </div>
         
-        {/* Client Details Section */}
-        <div className="flex flex-col mb-6 relative z-10">
-          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5">
-             <User className="w-3.5 h-3.5 text-primary-start" />
-             <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">{t('caseCard.clientLabel', 'Klienti')}</span>
+        {/* Contact Representative Section */}
+        <div className="flex flex-col mb-6 relative z-10 bg-white/5 rounded-xl p-3 border border-white/5">
+          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/5">
+             <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">{t('caseCard.contactLabel', 'Përfaqësuesi')}</span>
           </div>
           
           <div className="space-y-1.5 pl-1">
-              <p className="text-base font-medium text-white truncate">
+              <p className="text-sm font-bold text-white truncate">
                 {caseData.client?.name || t('general.notAvailable', 'N/A')}
               </p>
               
               {caseData.client?.email && (
-                  <div className="flex items-center gap-2 text-sm text-text-secondary">
-                      <Mail className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-2 text-xs text-text-secondary font-medium">
+                      <Mail className="w-3 h-3 text-primary-start" />
                       <span className="truncate">{caseData.client.email}</span>
                   </div>
               )}
               {caseData.client?.phone && (
-                  <div className="flex items-center gap-2 text-sm text-text-secondary">
-                      <Phone className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-2 text-xs text-text-secondary font-medium">
+                      <Phone className="w-3 h-3 text-primary-start" />
                       <span className="truncate">{caseData.client.phone}</span>
                   </div>
               )}
@@ -100,43 +105,44 @@ const CaseCard: React.FC<CaseCardProps> = ({ caseData, onDelete }) => {
         </div>
       </div>
       
-      <div className="relative z-10">
+      <div className="relative z-10 mt-auto">
         {/* Statistics Section */}
         <div className="pt-4 border-t border-white/5 flex items-center justify-between gap-2">
           
-          <div className="flex items-center gap-4">
-              {/* Documents */}
-              <div className="flex items-center gap-1.5" title={`${caseData.document_count || 0} Dokumente`}>
-                <FileText className="h-4 w-4 text-blue-400" />
-                <span className="text-sm font-medium text-text-secondary">{caseData.document_count || 0}</span>
+          <div className="flex items-center gap-3">
+              {/* Invoices/Documents */}
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5" title={`${caseData.document_count || 0} Dokumente`}>
+                <Receipt className="h-3.5 w-3.5 text-blue-400" />
+                <span className="text-xs font-bold text-white">{caseData.document_count || 0}</span>
               </div>
 
-              {/* Alerts */}
+              {/* Tax Deadlines (Alerts) */}
               <button 
                 onClick={handleCalendarNav}
-                className="flex items-center gap-1.5 group/icon hover:bg-white/5 px-1.5 py-0.5 rounded transition-colors" 
-                title={`${caseData.alert_count || 0} Afate`}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-accent-start/10 border border-accent-start/20 hover:bg-accent-start/20 transition-colors" 
+                title={`${caseData.alert_count || 0} Afate Tatimore`}
               >
-                <AlertTriangle className="h-4 w-4 text-accent-start group-hover/icon:text-accent-end transition-colors" />
-                <span className="text-sm font-medium text-text-secondary group-hover/icon:text-white">{caseData.alert_count || 0}</span>
+                <AlertTriangle className="h-3.5 w-3.5 text-accent-start animate-pulse" />
+                <span className="text-xs font-bold text-accent-start">{caseData.alert_count || 0}</span>
               </button>
 
-              {/* Events */}
+              {/* Financial Events */}
               <button 
                 onClick={handleCalendarNav}
-                className="flex items-center gap-1.5 group/icon hover:bg-white/5 px-1.5 py-0.5 rounded transition-colors" 
-                title={`${caseData.event_count || 0} Ngjarje`}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-secondary-start/10 border border-secondary-start/20 hover:bg-secondary-start/20 transition-colors" 
+                title={`${caseData.event_count || 0} Ngjarje Financiare`}
               >
-                <CalendarDays className="h-4 w-4 text-secondary-start group-hover/icon:text-secondary-end transition-colors" />
-                <span className="text-sm font-medium text-text-secondary group-hover/icon:text-white">{caseData.event_count || 0}</span>
+                <Calculator className="h-3.5 w-3.5 text-secondary-start" />
+                <span className="text-xs font-bold text-secondary-start">{caseData.event_count || 0}</span>
               </button>
           </div>
         </div>
 
         {/* Footer: Actions */}
         <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
-          <span className="text-sm font-bold text-primary-start group-hover:text-primary-end transition-colors flex items-center gap-1">
-            {t('general.view', 'Shiko')} {t('archive.details', 'Detajet')} 
+          <span className="text-[10px] font-black uppercase tracking-widest text-primary-start group-hover:text-primary-end transition-colors flex items-center gap-2">
+            <TrendingUp size={14} />
+            {t('general.view', 'Shiko Pasqyrën')} 
           </span>
           
           <motion.button

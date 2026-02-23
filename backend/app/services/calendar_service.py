@@ -1,7 +1,8 @@
 # FILE: backend/app/services/calendar_service.py
-# PHOENIX PROTOCOL - CALENDAR SERVICE V3.7 (DATETIME AWARENESS FIX)
-# 1. FIXED: In generate_briefing, make event start_date timezone-aware before subtraction.
-# 2. STATUS: All datetime operations now consistently use offset‑aware UTC.
+# PHOENIX PROTOCOL - CALENDAR SERVICE V4.0 (ACCOUNTING TRIAGE ALIGNMENT)
+# 1. REFACTOR: Replaced legal triage keywords with Accounting/Tax keywords (TVSH, Tatim, Pagat, etc.).
+# 2. REFACTOR: Replaced legal status codes (PREKLUZIV/GJYQESOR) with standard codes (CRITICAL/IMPORTANT/ROUTINE).
+# 3. STATUS: Fully adapted for accounting context. Datetime awareness preserved.
 
 from typing import List, Dict, Any, Tuple, Optional
 from datetime import datetime, timezone, timedelta, date
@@ -29,10 +30,16 @@ class CalendarService:
         return d not in KOSOVO_HOLIDAYS_MAP
 
     def get_event_triage(self, title: str) -> str:
+        """Categorizes events based on accounting/financial urgency."""
         t_low = title.lower()
-        if any(k in t_low for k in ['ankesë', 'padi', 'parashkrim', 'prapësim', 'afat prekluziv']): return "LEVEL_1_PREKLUZIV"
-        if any(k in t_low for k in ['urdhër', 'aktvendim', 'dorëzim', 'ekspertizë', 'parashtresë', 'provë']): return "LEVEL_2_GJYQESOR"
-        return "LEVEL_3_PROCEDURAL"
+        # Level 1: Hard deadlines with financial penalties (Taxes, VAT, Payroll, ATK declarations)
+        if any(k in t_low for k in ['tvsh', 'tatim', 'pagat', 'kontribute', 'bilanc', 'deklarim', 'këst', 'atk']): 
+            return "LEVEL_1_CRITICAL"
+        # Level 2: Internal reporting, invoicing, calculations
+        if any(k in t_low for k in ['faturim', 'barazim', 'kalkulim', 'inventar', 'raport', 'audit', 'banka']): 
+            return "LEVEL_2_IMPORTANT"
+        # Level 3: Standard tasks
+        return "LEVEL_3_ROUTINE"
 
     def calculate_working_days(self, start_date: date, end_date: date) -> int:
         if start_date > end_date: return -1 * (start_date - end_date).days
@@ -44,7 +51,7 @@ class CalendarService:
         """Guardian Briefing: Strictly triages AGENDA items for the Risk Radar."""
         now = datetime.now(timezone.utc)
         today = now.date()
-        safe_name = str(user_name or "Avokat").title()
+        safe_name = str(user_name or "Kontabilist").title()
         
         radar_items = []
         future_limit = now + timedelta(hours=48)
@@ -76,14 +83,18 @@ class CalendarService:
             "start_date": {"$gte": now, "$lt": now + timedelta(days=7)}
         })
         
-        status_type = "CRITICAL" if any(i['level'] == "LEVEL_1_PREKLUZIV" for i in radar_items) else ("WARNING" if urgent_count > 0 else "OPTIMAL")
+        # Updated to check for the new LEVEL_1_CRITICAL code
+        status_type = "CRITICAL" if any(i['level'] == "LEVEL_1_CRITICAL" for i in radar_items) else ("WARNING" if urgent_count > 0 else "OPTIMAL")
         hour = now.hour + 1
         g_key = "morning" if 5 <= hour < 12 else ("afternoon" if 12 <= hour < 18 else "evening")
         
         return {
-            "count": urgent_count, "greeting_key": g_key, "message_key": f"work_{status_type.lower()}_msg", 
-            "status": status_type, "risk_radar": radar_items,
-            "data": {"name": safe_name, "count": urgent_count, "quote_key": f"quote_{(today.timetuple().tm_yday % 10) + 1}"}
+            "count": urgent_count, 
+            "greeting_key": g_key, 
+            "message_key": f"work_{status_type.lower()}_msg", 
+            "status": status_type, 
+            "risk_radar": radar_items,
+            "data": {"name": safe_name, "count": urgent_count}
         }
 
     def get_events_for_user(self, db: Database, user_id: ObjectId) -> List[Dict[str, Any]]:

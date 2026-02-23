@@ -1,4 +1,9 @@
 # FILE: backend/app/models/calendar.py
+# PHOENIX PROTOCOL - CALENDAR MODEL V9.1 (ACCOUNTING ENUMS)
+# 1. REFACTOR: EventType Enum updated to Accounting standards (TAX_DEADLINE, PAYMENT_DUE, etc.).
+# 2. CLEANUP: Removed Legal Enums (HEARING, COURT_DATE, FILING).
+# 3. STATUS: Backend Validation synchronized with Frontend Types.
+
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Optional, List
 from datetime import datetime
@@ -8,31 +13,27 @@ from bson import ObjectId
 from app.models.common import PyObjectId 
 
 class EventType(str, Enum):
-    DEADLINE = "DEADLINE"
-    HEARING = "HEARING"
-    MEETING = "MEETING"
-    FILING = "FILING"
-    COURT_DATE = "COURT_DATE"
-    CONSULTATION = "CONSULTATION"
-    PAYMENT = "PAYMENT"
-    OTHER = "OTHER"
+    # Accounting / Fiscal Types
+    TAX_DEADLINE = "TAX_DEADLINE"   # Critical: VAT (TVSH), Corporate Tax (TAK), Declarations
+    PAYMENT_DUE = "PAYMENT_DUE"     # Important: Invoices, Salaries, Utilities, Accounts Payable
+    APPOINTMENT = "APPOINTMENT"     # Standard: Client meetings
+    TASK = "TASK"                   # Routine: Internal bookkeeping, Reconciliations
+    OTHER = "OTHER"                 # Fallback
 
 class EventCategory(str, Enum):
-    # PHOENIX: Added to separate Agenda from Metadata
-    AGENDA = "AGENDA"  # Appears in Calendar (Deadlines, seanca)
-    FACT = "FACT"      # Metadata only (Birthdays, historical dates)
+    # PHOENIX: Separates Actionable Items from Metadata
+    AGENDA = "AGENDA"  # Appears in Calendar (Deadlines, Payments)
+    FACT = "FACT"      # Metadata only (Invoice dates, Transaction logs)
 
 class EventPriority(str, Enum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
-    NORMAL = "NORMAL" 
     HIGH = "HIGH"
     CRITICAL = "CRITICAL"
 
 class EventStatus(str, Enum):
     PENDING = "PENDING"
     CONFIRMED = "CONFIRMED"
-    RESOLVED = "RESOLVED" 
     COMPLETED = "COMPLETED"
     CANCELLED = "CANCELLED"
 
@@ -42,8 +43,8 @@ class CalendarEventBase(BaseModel):
     start_date: datetime
     end_date: Optional[datetime] = None
     is_all_day: bool = False
-    event_type: EventType = EventType.MEETING
-    category: EventCategory = EventCategory.AGENDA # PHOENIX: Default to Agenda
+    event_type: EventType = EventType.TASK # Default changed to Accounting Task
+    category: EventCategory = EventCategory.AGENDA 
     priority: EventPriority = EventPriority.MEDIUM
     location: Optional[str] = Field(None, max_length=100)
     attendees: Optional[List[str]] = None

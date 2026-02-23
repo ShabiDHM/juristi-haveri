@@ -1,8 +1,7 @@
 // FILE: src/data/types.ts
-// PHOENIX PROTOCOL - TOTAL SYSTEM SYNCHRONIZATION V29.3 (FINAL GRAPH TYPE DECOMMISSION & ENHANCEDANOMALY VERIFICATION)
-// 1. REMOVED: All Graph-related interfaces (GraphNode, GraphLink, GraphData) as the feature is decommissioned.
-// 2. VERIFIED: 'EnhancedAnomaly' definition is present and unchanged, addressing reported 'Cannot find name' error (likely cache/environment issue).
-// 3. STATUS: 100% Type Clean. No orphaned types.
+// PHOENIX PROTOCOL - TOTAL SYSTEM SYNCHRONIZATION V29.4 (ACCOUNTING TRIAGE ALIGNMENT)
+// 1. REFACTOR: Updated RiskAlert 'level' union to match new accounting backend statuses (CRITICAL/IMPORTANT/ROUTINE).
+// 2. STATUS: Type Clean. Dashboard Radar compilation errors resolved.
 
 import { AccountType, SubscriptionTier, ProductPlan } from './enums';
 
@@ -54,7 +53,8 @@ export interface AcceptInviteRequest { token: string; username: string; password
 export interface RiskAlert {
     id: string;
     title: string;
-    level: 'LEVEL_1_PREKLUZIV' | 'LEVEL_2_GJYQESOR' | 'LEVEL_3_PROCEDURAL';
+    // UPDATED: Aligned with new Accounting/Tax risk levels from backend
+    level: 'LEVEL_1_CRITICAL' | 'LEVEL_2_IMPORTANT' | 'LEVEL_3_ROUTINE';
     seconds_remaining: number;
     effective_deadline: string;
 }
@@ -317,7 +317,7 @@ export interface AnalyticsDashboardData {
 }
 
 // --- 8. FORENSIC ANALYSIS ---
-export interface EnhancedAnomaly { // This is the definition of EnhancedAnomaly
+export interface EnhancedAnomaly { 
     date: string;
     amount: number;
     description: string;
@@ -335,7 +335,7 @@ export interface SpreadsheetAnalysisResult {
     columns: string[]; 
     narrative_report: string; 
     charts: any[]; 
-    anomalies: EnhancedAnomaly[]; // This correctly uses EnhancedAnomaly
+    anomalies: EnhancedAnomaly[]; 
     key_statistics: Record<string, string | number>; 
     preview_rows?: Record<string, any>[]; 
     processed_at: string; 

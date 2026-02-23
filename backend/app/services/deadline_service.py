@@ -1,23 +1,22 @@
 # FILE: backend/app/services/deadline_service.py
-# PHOENIX PROTOCOL - DEADLINE ENGINE V8.3 (STRONGER AGENDA CLASSIFICATION + FALLBACK RULES)
-# 1. ENHANCED: System prompt now explicitly lists AGENDA examples.
-# 2. ADDED: Fallback rule: future dates with procedural keywords are forced to AGENDA.
-# 3. ADDED: Logging of fallback overrides.
-# 4. STATUS: More reliable calendar population.
+# PHOENIX PROTOCOL - FISCAL DEADLINE ENGINE V9.1 (IMPORT FIX)
+# 1. FIX: Switched to Absolute Imports (app.models...) to resolve Pylance/Runtime resolution errors.
+# 2. STATUS: Import paths are now strictly defined.
 
 import os
 import json
 import structlog
 import dateparser
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any, Optional
 from bson import ObjectId
 from pymongo.database import Database
 from openai import OpenAI 
 
-from . import document_service 
-from ..models.document import DocumentOut
-from ..models.calendar import EventType, EventStatus, EventPriority, EventCategory
+from app.services import document_service 
+from app.models.document import DocumentOut
+# CHANGED: Absolute import to prevent resolution errors
+from app.models.calendar import EventType, EventStatus, EventPriority, EventCategory
 
 logger = structlog.get_logger(__name__)
 
@@ -32,11 +31,10 @@ AL_MONTHS = {
     "dhjetor": "December"
 }
 
-# Keywords that indicate a date is likely an actionable agenda item
-AGENDA_KEYWORDS = [
-    "seancë", "seanca", "gjykim", "shqyrtim", "afat", "afati", "dorëzim", "paraqitje",
-    "pagesë", "depozitë", "inspektim", "takim", "dëgjim", "seancë dëgjimore",
-    "mbrojtje", "ankesë", "padi", "kërkesë", "paradhënie", "provim"
+# FISCAL KEYWORDS: Triggers for accounting deadlines
+ACCOUNTING_KEYWORDS = [
+    "tvsh", "tatim", "paga", "kontribute", "qs", "tak", "bilanc", "deklarim", 
+    "faturë", "invoice", "pagesë", "këst", "audit", "inventar", "afat pagese"
 ]
 
 def _preprocess_date_text(text: str) -> str:
@@ -52,27 +50,29 @@ def _extract_dates_with_llm(full_text: str, doc_category: str) -> List[Dict[str,
     logger.info(f"LLM input text length: {len(truncated_text)}")
     logger.info(f"LLM input text preview: {truncated_text[:500]}...")
     
-    # Enhanced prompt with explicit AGENDA examples
+    # NEW PROMPT: Focused on Tax & Accounting
     system_prompt = f"""
-    Ti je "Senior Legal Analyst". DATA SOT: {current_date}.
-    DETYRA: Analizo këtë dokument ({doc_category}) dhe nxirr të gjitha datat e rëndësishme.
+    Ti je "Senior Tax Accountant & Compliance Officer". DATA SOT: {current_date}.
+    DETYRA: Analizo këtë dokument financiar ({doc_category}) dhe nxirr afatet e pagesave dhe deklarimeve.
     
     RREGULLA TË RREPTA:
-    - **AGENDA** janë VETËM afatet ligjore të ardhshme që kërkojnë veprim nga avokati ose palët, si:
-        * Seanca gjyqësore, dëgjime, inspektime.
-        * Afate për dorëzimin e provave, ekspertizave, ankesave.
-        * Pagesa të detyrueshme, paradhënie, depozita.
-        * Takime me klientin ose palët e tjera.
-    - **FACT** janë të gjitha datat e tjera:
-        * Data e ngjarjeve të kaluara (lindje, nënshkrim kontrate, ngjarje historike).
-        * Data të mesazheve në biseda (CHAT).
-        * Data që nuk kanë ndikim në veprimet e ardhshme ligjore.
+    - **AGENDA** (Veprime të Detyrueshme):
+        * Afati i fundit për deklarimin e TVSH-së (zakonisht data 20).
+        * Afati i fundit për pagesën e Kontributeve (QS) dhe TAP (zakonisht data 15).
+        * Afati i pagesës së faturës (Invoice Due Date).
+        * Afati për dorëzimin e Bilancit Vjetor (31 Mars).
+        * Këste të Tatimit në Fitim (TAK).
+    - **FACT** (Informacion):
+        * Data e lëshimit të faturës (Invoice Date).
+        * Data e transaksionit bankar.
+        * Data e fillimit të kontratës së punës.
     
-    KATEGORITË:
-    - "AGENDA": Shfaqet në kalendarin e avokatit.
-    - "FACT": Përdoret vetëm për kronologji dhe analizë.
+    Kategoritë e Lejuara për 'event_type': 
+    - "TAX_DEADLINE" (për TVSH, TAK, QS, Bilanc)
+    - "PAYMENT_DUE" (për Fatura furnitorësh, pagesa kleringu)
+    - "TASK" (për deklarime rutinë)
     
-    Kthe JSON: {{ "events": [ {{ "title": "...", "date_text": "...", "category": "AGENDA|FACT", "description": "..." }} ] }}
+    Kthe JSON: {{ "events": [ {{ "title": "...", "date_text": "...", "category": "AGENDA|FACT", "event_type": "TAX_DEADLINE|PAYMENT_DUE|TASK", "description": "..." }} ] }}
     """
 
     if DEEPSEEK_API_KEY:
@@ -129,41 +129,46 @@ def extract_and_save_deadlines(db: Database, document_id: str, full_text: str, d
         
         log.debug("Parsed date", parsed_date=parsed.isoformat())
         
-        # Get LLM category (default to FACT if missing)
         llm_category = item.get("category", "FACT")
+        event_type = item.get("event_type", "OTHER") # Default fallback
         description = item.get("description", "")
         title = item.get("title", "")
         
-        # --- FALLBACK RULE: Force AGENDA if future and contains procedural keywords ---
+        # --- FALLBACK RULE: Force AGENDA for accounting keywords if clearly in future ---
         is_future = parsed >= now
-        is_not_chat = doc_category.upper() not in ["CHAT_LOG", "WHATSAPP", "BISEDË"]
-        contains_keyword = any(kw in description.lower() or kw in title.lower() for kw in AGENDA_KEYWORDS)
+        is_not_log = doc_category.upper() not in ["LOG", "AUDIT_TRAIL"]
+        contains_keyword = any(kw in description.lower() or kw in title.lower() for kw in ACCOUNTING_KEYWORDS)
         
         final_category = llm_category
-        if is_future and is_not_chat and contains_keyword:
+        if is_future and is_not_log and contains_keyword:
             if final_category != "AGENDA":
-                logger.info(f"Fallback: overriding {llm_category} to AGENDA for date {raw_date} (keyword match)")
+                logger.info(f"Fallback: overriding {llm_category} to AGENDA for date {raw_date} (accounting keyword match)")
                 final_category = "AGENDA"
+                # Auto-classify type if missing
+                if "tvsh" in title.lower() or "tatim" in title.lower():
+                    event_type = "TAX_DEADLINE"
+                elif "fatur" in title.lower() or "invoice" in title.lower():
+                    event_type = "PAYMENT_DUE"
         
         # Build chronology item
         metadata_chronology.append({
             "title": title,
             "date": parsed,
             "category": final_category,
+            "event_type": event_type,
             "description": description
         })
 
         is_agenda = final_category == "AGENDA"
-        log.debug("Gating checks", 
-                  is_agenda=is_agenda, 
-                  is_future=is_future, 
-                  is_not_chat=is_not_chat,
-                  contains_keyword=contains_keyword,
-                  final_category=final_category)
 
-        if is_agenda and is_future and is_not_chat:
+        if is_agenda and is_future and is_not_log:
+            # Determine Priority based on Type
+            priority = EventPriority.MEDIUM
+            if event_type == "TAX_DEADLINE": priority = EventPriority.CRITICAL
+            elif event_type == "PAYMENT_DUE": priority = EventPriority.HIGH
+
             calendar_events.append({
-                "case_id": str(document.case_id),       
+                "case_id": str(document.case_id) if document.case_id else None,       
                 "owner_id": document.owner_id,
                 "document_id": document_id,
                 "title": title,
@@ -172,19 +177,19 @@ def extract_and_save_deadlines(db: Database, document_id: str, full_text: str, d
                 "start_date": parsed,         
                 "end_date": parsed,           
                 "is_all_day": True,
-                "event_type": EventType.DEADLINE, 
+                "event_type": event_type, 
                 "status": EventStatus.PENDING,     
-                "priority": EventPriority.HIGH, 
+                "priority": priority, 
                 "created_at": datetime.now(timezone.utc)
             })
-            log.info("Added to calendar", title=title, date=parsed.isoformat())
+            log.info("Added to calendar", title=title, date=parsed.isoformat(), type=event_type)
 
     # Save chronology metadata
     db.documents.update_one(
         {"_id": doc_oid}, 
-        {"$set": {"ai_metadata.case_chronology": metadata_chronology}}
+        {"$set": {"ai_metadata.financial_chronology": metadata_chronology}} 
     )
-    log.info("Saved chronology items", count=len(metadata_chronology))
+    log.info("Saved financial chronology items", count=len(metadata_chronology))
 
     # Replace calendar events for this document
     db.calendar_events.delete_many({"document_id": document_id}) 

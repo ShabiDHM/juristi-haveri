@@ -1,8 +1,9 @@
 # FILE: backend/app/services/albanian_metadata_extractor.py
-# PHOENIX PROTOCOL - METADATA EXTRACTOR V5.1 (SYNTAX FIX)
-# 1. FIX: Resolved truncated variable name at end of file.
-# 2. JURISDICTION: Target strictly "Republic of Kosovo" Institutions.
-# 3. SCHEMA: Standardized extraction for Graph & DB ingestion.
+# PHOENIX PROTOCOL - METADATA EXTRACTOR V6.0 (ACCOUNTING TRANSFORMATION)
+# 1. REFACTOR: Transformed from "Legal Specialist" to "Fiscal & Audit Specialist".
+# 2. SCHEMA: Optimized to extract NUI (Fiscal Number), Invoice Numbers, and Tax Periods.
+# 3. JURISDICTION: Strict focus on Kosovo ATK (Tax Administration) and Banking standards.
+# 4. STATUS: 100% Accounting Aligned.
 
 import re
 import logging
@@ -21,7 +22,6 @@ OPENROUTER_MODEL = "deepseek/deepseek-chat"
 
 class AlbanianMetadataExtractor:
     def __init__(self):
-        # Tier 1: DeepSeek Client
         if DEEPSEEK_API_KEY:
             self.client = OpenAI(
                 api_key=DEEPSEEK_API_KEY,
@@ -30,46 +30,46 @@ class AlbanianMetadataExtractor:
         else:
             self.client = None
 
-        # Tier 2: Regex Patterns (Backup)
-        # PHOENIX: Optimized for Kosovo context (EUR primary)
+        # Tier 2: Regex Patterns (Accounting Optimized)
         self.patterns = {
-            'contract_section': re.compile(r'Neni\s+(\d+\.?\d*)[:\-]\s*(.+?)(?=\n|$)', re.IGNORECASE),
+            'fiscal_number': re.compile(r'(NUI|Nr\.\s*Fiskal|NF)[:\-]?\s*(\d{9})', re.IGNORECASE),
+            'invoice_ref': re.compile(r'(Fatura|Invoice|Nr\.\s*Dokumentit)[:\-]?\s*([\w\-\/]+)', re.IGNORECASE),
             'date': re.compile(r'(\d{1,2}\s+(Janar|Shkurt|Mars|Prill|Maj|Qershor|Korrik|Gusht|Shtator|Tetor|Nëntor|Dhjetor)\s+\d{4})', re.IGNORECASE),
-            'case_reference': re.compile(r'Çështja\s+(Nr\.?\s*[\w\-\/]+)', re.IGNORECASE),
-            'party': re.compile(r'(Paditësi|Padituesi|Pale|E Paditura)\s*[:\-]\s*(.+?)(?=\n|$)', re.IGNORECASE),
             'amount': re.compile(r'(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)\s*(€|EUR|euro)', re.IGNORECASE),
-            'court': re.compile(r'(Gjykat[aë]s?\s+(e|ë)\s+[\w\s]+)', re.IGNORECASE),
-            'judge': re.compile(r'(Gjykat[aë]s(it)?\s+[\w\s]+)', re.IGNORECASE),
+            'business_entity': re.compile(r'(Sh\.p\.k|L\.L\.C|B\.I|O\.P)[:\-]?\s*([\w\s]+)', re.IGNORECASE),
+            'institution': re.compile(r'(ATK|Administrata\s+Tatimore|Banka\s+[\w\s]+|Dogana)', re.IGNORECASE),
         }
         
-        logger.info("✅ Kosovo Metadata Extractor V5.1 Initialized")
+        logger.info("✅ Kosovo Fiscal Metadata Extractor V6.0 Initialized")
 
     def _extract_with_deepseek(self, text: str) -> Optional[Dict[str, Any]]:
         """
-        Tier 1: Semantic Extraction using DeepSeek V3.
+        Tier 1: Semantic Extraction using DeepSeek V3 (Accounting Context).
         """
         if not self.client: return None
 
         truncated_text = text[:15000] 
 
         system_prompt = """
-        Ti je "Specialist i Arkivës Ligjore" për Republikën e Kosovës.
+        Ti je "Specialist i Analizës Fiskale" për Republikën e Kosovës.
         
         DETYRA:
-        Identifiko të dhënat strukturore (Metadata) nga dokumenti.
+        Identifiko të dhënat kontabël (Metadata) nga dokumenti financiar.
         
         FUSHAT E KËRKUARA (JSON):
-        - court: Emri i Gjykatës (psh. "Gjykata Themelore në Prishtinë").
-        - judge: Emri i Gjyqtarit.
-        - case_number: Numri i Lëndës (format: C.nr... / P.nr...).
-        - parties: Lista e palëve.
-        - document_type: Lloji (Aktgjykim, Padi, Kontratë).
-        - date: Data e dokumentit.
-        - amount: Vlera monetare (Prefero EUR).
-        - jurisdiction_check: "KOSOVË" ose "E HUAJ" (nëse është Shqipëri/Tjetër).
+        - business_name: Emri i Biznesit/Klientit (psh. "ABC Sh.p.k").
+        - fiscal_number: Numri Fiskal ose NUI (9 shifra).
+        - document_number: Numri i faturës ose referenca e deklaratës.
+        - entities: Lista e subjekteve të përfshira (Furnitori, Blerësi).
+        - document_type: Lloji (Faturë, Deklaratë TVSH, Pasqyrë Bankare, Kontratë Pune).
+        - date: Data e lëshimit.
+        - total_amount: Vlera totale me TVSH.
+        - vat_amount: Shuma e TVSH-së (nëse specifikohet).
+        - fiscal_period: Periudha (psh. "TM1 2026" ose "Janar 2026").
+        - jurisdiction_check: "KOSOVË" ose "E HUAJ".
         
         RREGULLA:
-        - Fokusohu te institucionet e Kosovës.
+        - Fokusohu te përputhshmëria me ATK-në.
         - Përgjigju VETËM me JSON valid.
         """
 
@@ -78,13 +78,13 @@ class AlbanianMetadataExtractor:
                 model=OPENROUTER_MODEL,
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"DOKUMENTI:\n{truncated_text}"}
+                    {"role": "user", "content": f"DOKUMENTI FINANCIAR:\n{truncated_text}"}
                 ],
                 temperature=0.1,
                 response_format={"type": "json_object"},
                 extra_headers={
-                    "HTTP-Referer": "https://juristi.tech", 
-                    "X-Title": "Kontabilisti AI Metadata"
+                    "HTTP-Referer": "https://kontabilisti.tech", 
+                    "X-Title": "Kontabilisti AI Fiscal Metadata"
                 }
             )
             
@@ -93,62 +93,58 @@ class AlbanianMetadataExtractor:
                 return json.loads(content)
                 
         except Exception as e:
-            logger.warning(f"⚠️ DeepSeek Metadata Extraction Failed: {e}")
+            logger.warning(f"⚠️ DeepSeek Fiscal Extraction Failed: {e}")
             return None
         return None
 
     def _extract_with_regex(self, text: str) -> Dict[str, Any]:
         """
-        Tier 2: Regex Backup.
+        Tier 2: Regex Backup (Accounting focus).
         """
         metadata = {}
         
-        match = self.patterns['case_reference'].search(text)
-        if match: metadata['case_number'] = match.group(1)
+        match = self.patterns['fiscal_number'].search(text)
+        if match: metadata['fiscal_number'] = match.group(2)
         
-        match = self.patterns['court'].search(text)
-        if match: metadata['court'] = match.group(0)
-        
-        match = self.patterns['judge'].search(text)
-        if match: metadata['judge'] = match.group(0)
+        match = self.patterns['invoice_ref'].search(text)
+        if match: metadata['document_number'] = match.group(2)
         
         match = self.patterns['amount'].search(text)
-        if match: metadata['amount'] = f"{match.group(1)} {match.group(2)}"
+        if match: metadata['total_amount'] = f"{match.group(1)} {match.group(2)}"
         
-        parties = []
-        matches = self.patterns['party'].findall(text)
-        for m in matches:
-            parties.append({"role": m[0], "name": m[1].strip()})
-        if parties: metadata['parties'] = parties
+        match = self.patterns['institution'].search(text)
+        if match: metadata['institution'] = match.group(0)
         
         return metadata
 
     def extract(self, text: str, document_id: Optional[str] = None) -> Dict[str, Any]:
         """
-        Main extraction pipeline.
+        Main extraction pipeline for accounting documents.
         """
         if not text:
             return {}
         
-        # 1. Try DeepSeek
+        # 1. Semantic Extraction
         metadata = self._extract_with_deepseek(text)
         
         # 2. Fallback
         if not metadata:
-            logger.info("Falling back to Regex Metadata Extraction")
+            logger.info("Falling back to Regex Fiscal Extraction")
             metadata = self._extract_with_regex(text)
         
-        # Standardize Output
+        # Standardize Output (Accounting Schema)
         result = {
             "document_id": document_id,
             "extraction_timestamp": datetime.now().isoformat(),
-            "court": metadata.get("court"),
-            "judge": metadata.get("judge"),
-            "case_number": metadata.get("case_number"),
-            "parties": metadata.get("parties", []),
+            "business_name": metadata.get("business_name"),
+            "fiscal_number": metadata.get("fiscal_number"),
+            "document_number": metadata.get("document_number"),
+            "entities": metadata.get("entities", []),
             "document_type": metadata.get("document_type"),
-            "amount": metadata.get("amount"),
+            "total_amount": metadata.get("total_amount"),
+            "vat_amount": metadata.get("vat_amount"),
             "date": metadata.get("date"),
+            "fiscal_period": metadata.get("fiscal_period"),
             "jurisdiction": metadata.get("jurisdiction_check", "UNKNOWN")
         }
         

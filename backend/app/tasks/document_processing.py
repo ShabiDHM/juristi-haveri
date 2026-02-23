@@ -1,8 +1,9 @@
 # FILE: backend/app/tasks/document_processing.py
-# PHOENIX PROTOCOL - JURISTI HYDRA WORKER V3.0
-# 1. BRIDGE: Integrated asyncio.run to call the refactored Hydra Orchestrator (V14.0).
-# 2. DE-DUPLICATION: Removed redundant graph ingestion (now handled in parallel by the service).
-# 3. STATUS: Optimized for high-speed parallel document processing.
+# PHOENIX PROTOCOL - KONTABILISTI HYDRA WORKER V4.0
+# 1. REFACTOR: Rebranded from "Juristi" to "Kontabilisti" context.
+# 2. BRIDGE: Maintained asyncio.run for the refactored Accounting Orchestrator (V16.0).
+# 3. LOGIC: All background document ingestion now reflects the Accounting domain.
+# 4. STATUS: 100% Accounting Aligned.
 
 import asyncio
 import structlog
@@ -14,7 +15,7 @@ from typing import Optional, Dict
 from redis import Redis 
 from pymongo.database import Database
 
-# Import connection functions for Lazy Init
+# PHOENIX: Absolute imports for architectural integrity
 from app.core.db import db_instance as global_db, redis_sync_client as global_redis, connect_to_mongo, connect_to_redis
 from app.core.config import settings 
 from app.services import document_processing_service
@@ -24,13 +25,13 @@ from app.models.document import DocumentStatus
 logger = structlog.get_logger(__name__)
 
 def get_redis_safe() -> Redis:
-    """Ensure we have a valid Redis connection."""
+    """Ensures a valid Redis connection for the worker."""
     if global_redis is not None:
         return global_redis
     return connect_to_redis()
 
 def get_db_safe() -> Database:
-    """Ensure we have a valid MongoDB connection."""
+    """Ensures a valid MongoDB connection for the worker."""
     if global_db is not None:
         return global_db
     _, db = connect_to_mongo()
@@ -38,7 +39,7 @@ def get_db_safe() -> Database:
 
 def publish_sse_update(document_id: str, status: str, error: Optional[str] = None):
     """
-    Helper to publish status updates to Redis for SSE.
+    Publishes fiscal document status updates to Redis for frontend SSE delivery.
     """
     redis_client = None
     try:
@@ -47,9 +48,10 @@ def publish_sse_update(document_id: str, status: str, error: Optional[str] = Non
         
         doc = db.documents.find_one({"_id": ObjectId(document_id)})
         if not doc:
-            logger.warning("sse.doc_not_found", document_id=document_id)
+            logger.warning("sse.fiscal_doc_not_found", document_id=document_id)
             return
         
+        # owner_id corresponds to the accountant/user
         user_id = str(doc.get("owner_id") or doc.get("user_id"))
 
         payload = {
@@ -61,7 +63,7 @@ def publish_sse_update(document_id: str, status: str, error: Optional[str] = Non
         
         channel = f"user:{user_id}:updates"
         redis_client.publish(channel, json.dumps(payload))
-        logger.info(f"🚀 SSE PUBLISHED: {channel} -> {status}")
+        logger.info(f"🚀 SSE FISCAL UPDATE: {channel} -> {status}")
         
     except Exception as e:
         logger.error("sse.publish_failed", error=str(e))
@@ -77,10 +79,13 @@ def publish_sse_update(document_id: str, status: str, error: Optional[str] = Non
     default_retry_delay=10
 )
 def process_document_task(self, document_id_str: str):
+    """
+    Primary background task for processing accounting documents (Invoices, Receipts, Statements).
+    """
     log = logger.bind(document_id=document_id_str, task_id=self.request.id)
-    log.info("task.received", attempt=self.request.retries)
+    log.info("task.fiscal_ingestion_received", attempt=self.request.retries)
 
-    # Initial delay for DB consistency on first attempt
+    # Allow a small window for DB consistency
     if self.request.retries == 0:
         time.sleep(1) 
 
@@ -92,11 +97,10 @@ def process_document_task(self, document_id_str: str):
         raise e
 
     try:
-        log.info("task.hydra_orchestration_started")
+        log.info("task.accounting_orchestration_started")
         
-        # PHOENIX BRIDGE: Running the Async Hydra Orchestrator inside the Sync Celery Task
-        # Note: orchestrate_document_processing_mongo (V14.0) now handles 
-        # Embeddings, Summary, Deadlines, Graph, and Storage in parallel.
+        # PHOENIX BRIDGE: Running the Async Orchestrator within the Sync Task.
+        # This handles Metadata, OCR, Embeddings, and Graph ingestion in parallel.
         asyncio.run(
             document_processing_service.orchestrate_document_processing_mongo(
                 db=db,
@@ -105,17 +109,17 @@ def process_document_task(self, document_id_str: str):
             )
         )
 
-        log.info("task.completed.success")
-        # Status update is handled inside finalize_document_processing, 
-        # but we send a final SSE trigger here for UI refreshment.
+        log.info("task.accounting_ingestion.success")
+        
+        # Trigger final UI refresh via SSE
         publish_sse_update(document_id_str, DocumentStatus.READY)
 
     except DocumentNotFoundInDBError as e:
-        log.warning("task.retrying.doc_not_found", error=str(e))
+        log.warning("task.retrying_missing_doc", error=str(e))
         raise self.retry(exc=e)
 
     except Exception as e:
-        log.error("task.failed.generic", error=str(e), exc_info=True)
+        log.error("task.failed.fiscal_processing", error=str(e), exc_info=True)
         try:
             db_safe = get_db_safe()
             db_safe.documents.update_one(
@@ -124,5 +128,5 @@ def process_document_task(self, document_id_str: str):
             )
             publish_sse_update(document_id_str, DocumentStatus.FAILED, str(e))
         except Exception as db_fail_e:
-             log.critical("task.CRITICAL_DB_FAILURE_ON_FAIL", error=str(db_fail_e))
+             log.critical("task.DATABASE_ACCESS_CRASH", error=str(db_fail_e))
         raise e

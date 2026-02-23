@@ -1,7 +1,8 @@
 # FILE: backend/app/services/business_service.py
-# PHOENIX PROTOCOL - BUSINESS SERVICE
-# 1. IMPORTS: Correctly imports form ..models.business
-# 2. LOGIC: Handles logo relative URL generation.
+# PHOENIX PROTOCOL - BUSINESS SERVICE V2.0 (ACCOUNTING TRANSFORMATION)
+# 1. REFACTOR: Default firm name changed from "Zyra Ligjore" to "Zyra e Kontabilitetit".
+# 2. FIX: Switched to Absolute Imports to resolve Pylance/Runtime path resolution issues.
+# 3. STATUS: 100% Accounting Aligned.
 
 import structlog
 import mimetypes
@@ -11,9 +12,9 @@ from bson import ObjectId
 from pymongo.database import Database
 from fastapi import UploadFile, HTTPException
 
-# RELATIVE IMPORT CHECK: This requires 'app/models/business.py' to exist
-from ..models.business import BusinessProfileUpdate, BusinessProfileInDB
-from ..services import storage_service
+# PHOENIX: Absolute imports for architectural integrity
+from app.models.business import BusinessProfileUpdate, BusinessProfileInDB
+from app.services import storage_service
 
 logger = structlog.get_logger(__name__)
 
@@ -28,7 +29,7 @@ class BusinessService:
             logger.info("business.profile_created", user_id=user_id)
             new_profile = {
                 "user_id": ObjectId(user_id),
-                "firm_name": "Zyra Ligjore",
+                "firm_name": "Zyra e Kontabilitetit", # Updated from Legal to Accounting
                 "branding_color": "#1f2937",
                 "created_at": datetime.now(timezone.utc),
                 "updated_at": datetime.now(timezone.utc)
@@ -67,7 +68,7 @@ class BusinessService:
                 folder=f"branding/{user_id}"
             )
             
-            # Store relative URL
+            # Store relative URL for frontend consumption
             logo_url = f"business/logo/{user_id}?ts={int(datetime.now().timestamp())}"
             
             result = self.db.business_profiles.find_one_and_update(
@@ -103,3 +104,5 @@ class BusinessService:
         except Exception as e:
             logger.error(f"Failed to stream logo for {user_id}: {e}")
             raise HTTPException(status_code=404, detail="Logo file missing")
+
+calendar_service = BusinessService # Placeholder if needed by older factory patterns

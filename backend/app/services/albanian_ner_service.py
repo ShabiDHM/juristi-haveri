@@ -1,8 +1,9 @@
 # FILE: backend/app/services/albanian_ner_service.py
-# PHOENIX PROTOCOL - NER ENGINE V4.1
-# 1. ENGINE: DeepSeek V3 (OpenRouter) for high-precision Albanian Entity Extraction.
-# 2. FALLBACK: Retains 'AI_CORE_URL' (Local Spacy) as backup.
-# 3. COMPATIBILITY: Returns standard (text, label, index) format for graph building.
+# PHOENIX PROTOCOL - NER ENGINE V5.0 (ACCOUNTING TRANSFORMATION)
+# 1. REFACTOR: Prompt pivoted to Financial and Accounting document extraction.
+# 2. ENHANCED: Added FISCAL_NUMBER (NUI) and INVOICE_NUMBER to entity detection.
+# 3. ANONYMIZATION: Updated placeholders for fiscal data protection.
+# 4. STATUS: 100% Accounting Aligned.
 
 import os
 import httpx
@@ -23,12 +24,12 @@ AI_CORE_URL = os.getenv("AI_CORE_URL", "http://ai-core-service:8000")
 
 class AlbanianNERService:
     """
-    Service responsible for detecting Named Entities (PII) using Hybrid Intelligence.
-    Tier 1: DeepSeek V3 (Cloud)
+    Service responsible for detecting Named Entities (PII) in financial documents.
+    Tier 1: DeepSeek V3 (Cloud) - Optimized for Accounting context.
     Tier 2: Kontabilisti AI Core (Local Spacy)
     """
     def __init__(self):
-        self.timeout = 15.0 # Slightly higher for LLM
+        self.timeout = 15.0
         
         if DEEPSEEK_API_KEY:
             self.client = OpenAI(
@@ -40,34 +41,34 @@ class AlbanianNERService:
 
     def _extract_with_deepseek(self, text: str) -> Optional[List[dict]]:
         """
-        Uses SOTA LLM to extract entities. Returns raw list of dicts.
+        Uses DeepSeek to extract accounting-related entities.
         """
         if not self.client: return None
 
-        # Truncate to avoid massive costs on huge docs, though DeepSeek is cheap.
-        # 10k chars is enough to get the main parties and context.
         truncated_text = text[:10000]
 
         system_prompt = """
-        Ti je një ekspert i Nxjerrjes së Entiteteve (NER) për dokumente ligjore shqipe.
+        Ti je një ekspert i Nxjerrjes së Entiteteve (NER) për dokumente financiare dhe kontabël shqipe.
         
         DETYRA:
-        Identifiko entitetet në tekstin e dhënë dhe ktheji në format JSON.
+        Identifiko entitetet specifike në tekstin e dhënë dhe ktheji në format JSON.
         
         KATEGORITË:
-        - PERSON: Emra njerëzish (p.sh. "Agim Gashi", "Dr. Vjosa Osmani").
-        - ORGANIZATION: Kompani, institucione, gjykata (p.sh. "Gjykata Themelore", "PTK sh.a.").
-        - LOCATION: Qytete, shtete, adresa (p.sh. "Prishtinë", "Rruga Luan Haradinaj").
-        - DATE: Data specifike (p.sh. "12/05/2023", "15 Janar").
-        - MONEY: Shuma parash (p.sh. "5000 Euro", "10,000 €").
+        - PERSON: Emra njerëzish (p.sh. "Agim Gashi", "Pronari").
+        - ORGANIZATION: Biznese, banka, ATK, kompani (p.sh. "Banka Kombëtare", "ABC Sh.p.k").
+        - FISCAL_NUMBER: NUI ose Numri Fiskal (9 shifra).
+        - INVOICE_NUMBER: Referenca e faturës ose dokumentit.
+        - MONEY: Shuma monetare dhe TVSH (p.sh. "500 Euro", "18% TVSH").
+        - DATE: Data e lëshimit apo pagesës.
+        - LOCATION: Adresa të bizneseve.
 
         FORMATI:
         [
-          {"text": "Agim Gashi", "label": "PERSON"},
-          {"text": "Prishtinë", "label": "LOCATION"}
+          {"text": "ABC Sh.p.k", "label": "ORGANIZATION"},
+          {"text": "810123456", "label": "FISCAL_NUMBER"}
         ]
         
-        Mos përfshi asnjë tekst tjetër përveç JSON.
+        Përgjigju VETËM me JSON valid.
         """
 
         try:
@@ -80,7 +81,7 @@ class AlbanianNERService:
                 temperature=0.1,
                 response_format={"type": "json_object"},
                 extra_headers={
-                    "HTTP-Referer": "https://juristi.tech", 
+                    "HTTP-Referer": "https://kontabilisti.tech", 
                     "X-Title": "Kontabilisti AI NER"
                 }
             )
@@ -90,7 +91,6 @@ class AlbanianNERService:
             
             data = json.loads(content)
             
-            # Normalize response (handle if LLM wraps in "entities": [...])
             if isinstance(data, dict):
                 for key in data:
                     if isinstance(data[key], list): return data[key]
@@ -104,9 +104,7 @@ class AlbanianNERService:
         return None
 
     def _extract_with_local_core(self, text: str) -> List[dict]:
-        """
-        Fallback to local microservice.
-        """
+        """Fallback to local microservice."""
         try:
             with httpx.Client(timeout=self.timeout) as client:
                 response = client.post(
@@ -122,12 +120,10 @@ class AlbanianNERService:
 
     def extract_entities(self, text: str) -> List[Tuple[str, str, int]]:
         """
-        Main entry point. Orchestrates Tier 1 -> Tier 2.
+        Main entry point for entity extraction.
         Returns: List of (entity_text, entity_label, start_char_index).
         """
         if not text: return []
-        
-        raw_entities = []
         
         # 1. Try DeepSeek
         raw_entities = self._extract_with_deepseek(text)
@@ -140,22 +136,19 @@ class AlbanianNERService:
             return []
 
         results = []
-        # Post-processing to find indices (LLMs don't return offsets)
         for ent in raw_entities:
             name = ent.get("text", "").strip()
             label = ent.get("label", "UNKNOWN").upper()
             
             if not name: continue
             
-            # Simple find (Caveat: Finds first occurrence only)
-            # For graph building, simply knowing the entity exists is usually sufficient.
             start_index = text.find(name)
             
-            # Map common LLM variations to standard labels if needed
-            if label in ["ORG", "ORGANIZATE"]: label = "ORGANIZATION"
-            if label in ["PER", "PERSONA"]: label = "PERSON"
-            if label in ["LOC", "LOKACION", "VEND"]: label = "LOCATION"
-            if label in ["DATE", "DATA"]: label = "DATE"
+            # Map common variations to standard fiscal labels
+            if label in ["ORG", "BIZNES"]: label = "ORGANIZATION"
+            if label in ["PER", "KLIENT"]: label = "PERSON"
+            if label in ["NUI", "NR_FISKAL"]: label = "FISCAL_NUMBER"
+            if label in ["FATURA", "NR_DOK"]: label = "INVOICE_NUMBER"
             
             if start_index != -1:
                 results.append((name, label, start_index))
@@ -163,20 +156,16 @@ class AlbanianNERService:
         return results
     
     def get_albanian_placeholder(self, entity_label: str) -> str:
-        """ 
-        Maps the entity label to an Albanian placeholder for anonymization. 
-        """
+        """ Maps the entity label to a financial/fiscal placeholder. """
         placeholders = {
             "PER": "[EMRI_PERSONI_ANONIMIZUAR]",
             "PERSON": "[EMRI_PERSONI_ANONIMIZUAR]",
-            "ORG": "[ORGANIZATË_ANONIMIZUAR]",
-            "ORGANIZATION": "[ORGANIZATË_ANONIMIZUAR]",
-            "LOC": "[VENDNDODHJA_ANONIMIZUAR]",
-            "LOCATION": "[VENDNDODHJA_ANONIMIZUAR]",
-            "GPE": "[VENDNDODHJA_ANONIMIZUAR]",
+            "ORG": "[BIZNES_ANONIMIZUAR]",
+            "ORGANIZATION": "[BIZNES_ANONIMIZUAR]",
+            "FISCAL_NUMBER": "[NUMRI_FISKAL_ANONIMIZUAR]",
+            "INVOICE_NUMBER": "[NUMRI_DOKUMENTIT_ANONIMIZUAR]",
             "DATE": "[DATA_ANONIMIZUAR]",
             "MONEY": "[VLERA_MONETARE_ANONIMIZUAR]",
-            "CASE_NUMBER": "[NUMRI_ÇËSHTJES_ANONIMIZUAR]",
         }
         return placeholders.get(entity_label.upper(), f"[{entity_label}_ANONIMIZUAR]")
         

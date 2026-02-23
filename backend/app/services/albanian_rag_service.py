@@ -1,8 +1,9 @@
 # FILE: backend/app/services/albanian_rag_service.py
-# PHOENIX PROTOCOL - RAG SERVICE V56.2 (LOG DOCUMENT SNIPPETS + STRONGER PROMPT)
-# 1. ADDED: Log first 200 chars of each retrieved case document.
-# 2. ADDED: Prompt now explicitly tells LLM to base answer on case documents first.
-# 3. STATUS: Diagnostic logging enabled.
+# PHOENIX PROTOCOL - RAG SERVICE V57.0 (ACCOUNTING BRAIN TRANSPLANT)
+# 1. REFACTOR: Persona transformed from 'Legal Partner' to 'Senior Tax Partner & Auditor'.
+# 2. UI: Response structure updated for Financial Audits and Fiscal Compliance.
+# 3. LOGIC: Maintained citation linking logic for Tax Laws and ATK Regulations.
+# 4. STATUS: Brain transplant complete.
 
 import os
 import sys
@@ -21,16 +22,15 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 OPENROUTER_MODEL = "deepseek/deepseek-chat" 
 LLM_TIMEOUT = 120
 
-AI_DISCLAIMER = "\n\n---\n*Kjo përgjigje është gjeneruar nga AI, vetëm për referencë.*"
+AI_DISCLAIMER = "\n\n---\n*Kjo analizë është gjeneruar nga AI për qëllime informative kontabël.*"
 
 PROTOKOLLI_MANDATOR = """
 **URDHËRA TË RREPTË FORMATIMI (NDIQINI ME PRECIZION):**
-1. Çdo citim ligjor DUHET të përmbajë **EMRIN E PLOTË ZYRTAR TË LIGJIT** dhe **NUMRIN ZYRTAR** (p.sh., "Nr. 04/L-077") siç shfaqen në kontekstin më poshtë.  
-   **Shembull i saktë (kopjojeni fjalë për fjalë):**  
-   `Ligji Nr. 04/L-077 për Marrëdhëniet e Detyrimeve, Neni 5`  
-   **Mos përdorni emra të shkurtuar si "Ligji për Familjen" – përdorni gjithmonë formën e plotë me numër.**
-2. Për çdo ligj të cituar, DUHET të shtoni rreshtin: **RELEVANCA:** [Pse ky nen është thelbësor për rastin].
-3. Përdor TITUJT MARKDOWN (###) për të ndarë seksionet.
+1. Çdo citim i rregulloreve DUHET të përmbajë **EMRIN E PLOTË TË LIGJIT OSE UDHËZIMIT** dhe **NUMRIN ZYRTAR** (p.sh., "Nr. 05/L-037") siç shfaqen në kontekst.  
+   **Shembull i saktë:**  
+   `Ligji Nr. 05/L-037 për Tatimin mbi Vlerën e Shtuar, Neni 28`  
+2. Për çdo rregullore të cituar, DUHET të shtoni rreshtin: **NDIKIMI FISKAL:** [Pse ky nen ndikon në llogaritë e klientit].
+3. Përdor TITUJT MARKDOWN (###) për të ndarë seksionet e raportit.
 4. MOS përdor blloqe kodi.
 """
 
@@ -109,17 +109,17 @@ class AlbanianRAGService:
         return full_citation
 
     def _build_context(self, case_docs: List[Dict], global_docs: List[Dict]) -> str:
-        context = "\n<<< MATERIALET E DOSJES >>>\n"
+        context = "\n<<< DOKUMENTACIONI I BIZNESIT (FATURA / PASQYRA) >>>\n"
         for idx, d in enumerate(case_docs):
             snippet = d.get('text', '')[:200]
-            logger.info(f"📄 Case doc {idx+1} snippet: {snippet}")
+            logger.info(f"📄 Business doc {idx+1} snippet: {snippet}")
             context += f"[{d.get('source')}, FAQJA: {d.get('page')}]: {d.get('text')}\n\n"
 
-        context += "\n<<< BAZA LIGJORE STATUTORE >>>\n"
+        context += "\n<<< RREGULLORET DHE UDHËZIMET FISKALE >>>\n"
         for d in global_docs:
-            law_title = d.get('law_title') or d.get('source') or "Ligji përkatës"
+            law_title = d.get('law_title') or d.get('source') or "Rregullorja përkatëse"
             article_num = d.get('article_number')
-            context += f"LIGJI: {law_title}, Neni {article_num}\nPËRMBAJTJA: {d.get('text')}\n\n"
+            context += f"LIGJI/RREGULLORJA: {law_title}, Neni {article_num}\nPËRMBAJTJA: {d.get('text')}\n\n"
         return context
 
     async def chat(self, query: str, user_id: str, case_id: Optional[str] = None,
@@ -129,47 +129,44 @@ class AlbanianRAGService:
             yield AI_DISCLAIMER
             return
 
-        from . import vector_store_service
+        from app.services import vector_store_service
 
-        logger.info(f"🔍 Chat request: user={user_id}, case={case_id}, query='{query[:100]}...'")
+        logger.info(f"🔍 Audit request: user={user_id}, client={case_id}, query='{query[:100]}...'")
 
         case_docs = vector_store_service.query_case_knowledge_base(
             user_id=user_id, query_text=query, case_context_id=case_id,
             document_ids=document_ids, n_results=15
         )
-        logger.info(f"📄 Retrieved {len(case_docs)} case documents from knowledge base.")
-
+        
         global_docs = vector_store_service.query_global_knowledge_base(
             query_text=query, n_results=10
         )
-        logger.info(f"⚖️ Retrieved {len(global_docs)} global law documents.")
 
         self._build_citation_map(global_docs)
         context_str = self._build_context(case_docs, global_docs)
 
-        # --- Stronger instruction to use case documents ---
         prompt = f"""
-        Ti je "Senior Legal Partner". Detyra jote është të japësh një opinion ligjor suprem.
+        Ti je "Senior Tax Partner & Certified Auditor". Detyra jote është të japësh një opinion ekspert mbi financat dhe taksat.
         {PROTOKOLLI_MANDATOR}
         
-        **KONTEKSTI:**
+        **KONTEKSTI I BIZNESIT:**
         {context_str}
         
-        **PYETJA:** "{query}"
+        **PYETJA E KLIENTIT:** "{query}"
 
         **UDHËZIM I RËNDËSISHËM:**
-        - Nëse pyetja ka të bëjë me rastin konkret, përdor PARA SË GJITHASH materialet e dosjes (<<< MATERIALET E DOSJES >>>).
-        - Vetëm pas kësaj, shto referenca nga baza ligjore për të mbështetur analizën.
-        - Nëse materialet e dosjes përmbajnë informacion për rastin, përfshiji ato në përgjigje.
+        - Analizo faturat dhe transaksionet e ofruara në <<< DOKUMENTACIONI I BIZNESIT >>>.
+        - Identifiko përputhshmërinë me ligjet e TVSH-së dhe udhëzimet e ATK-së.
+        - Nëse vëren anomali në shifra ose mospërputhje me ligjin, raportoji ato menjëherë.
 
-        **STRUKTURA (OBLIGATIVE):**
-        ### 1. ANALIZA E FAKTEVE
+        **STRUKTURA E RAPORTIT (OBLIGATIVE):**
+        ### 1. ANALIZA E TRANSAKSIONEVE
         
-        ### 2. BAZA LIGJORE DHE RELEVANCA
+        ### 2. PËRPUTHSHMËRIA FISKALE
         
-        ### 3. KONKLUZIONI STRATEGJIK
+        ### 3. REKOMANDIMET FINANCIARE
         
-        Fillo hartimin tani:
+        Fillo auditimin tani:
         """
 
         buffer = ""
@@ -188,18 +185,18 @@ class AlbanianRAGService:
                 yield self._format_citations(buffer)
             yield AI_DISCLAIMER
         except Exception as e:
-            logger.error(f"Deep Chat Stream Failure: {e}")
+            logger.error(f"Audit Stream Failure: {e}")
             yield f"\n[Gabim Gjatë Gjenerimit: {str(e)}]"
             yield AI_DISCLAIMER
 
     async def fast_rag(self, query: str, user_id: str, case_id: Optional[str] = None) -> str:
         if not self.llm:
             return ""
-        from . import vector_store_service
+        from app.services import vector_store_service
         l_docs = vector_store_service.query_global_knowledge_base(query_text=query, n_results=5)
         self._build_citation_map(l_docs)
         laws = "\n".join([d.get('text', '') for d in l_docs])
-        prompt = f"Përgjigju shkurt duke përdorur citimet me badge [Ligji](doc://ligji): {laws}\n\nPyetja: {query}"
+        prompt = f"Përgjigju shkurt si kontabilist duke përdorur citimet: {laws}\n\nPyetja: {query}"
         try:
             res = await self.llm.ainvoke(prompt)
             raw = str(res.content)

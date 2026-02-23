@@ -1,31 +1,33 @@
 # FILE: backend/app/services/categorization_service.py
-# PHOENIX PROTOCOL - RECONSTRUCTION V1.1 (DIRECT IMPORT)
-# 1. FIX: Imports 'categorize_document_text' function directly from llm_service.
-# 2. LOGIC: Breaks the circular dependency and resolves the startup crash.
+# PHOENIX PROTOCOL - CATEGORIZATION SERVICE V2.0 (ACCOUNTING TRANSFORMATION)
+# 1. FIX: Switched to Absolute Import from llm_service to resolve potential Pylance issues.
+# 2. REFACTOR: Documentation updated to reflect Fiscal/Accounting document classification.
+# 3. STATUS: 100% Accounting Aligned.
 
 import logging
-# CORRECTED IMPORT: Import the specific function, not the non-existent service object.
-from .llm_service import categorize_document_text
+# PHOENIX: Absolute import for architectural integrity
+from app.services.llm_service import categorize_document_text
 
 logger = logging.getLogger(__name__)
 
 class CategorizationService:
     """
-    A service dedicated to classifying document text into predefined categories.
+    Service responsible for classifying business documents (Invoices, Tax Declarations, 
+    Bank Statements, etc.) into predefined fiscal categories.
     """
     def categorize_document(self, text: str) -> str:
         """
-        Uses the LLM service to determine the category of a given text.
+        Invokes the LLM Intelligence to determine the fiscal category of a given text.
         """
         try:
-            # Directly call the imported function
+            # Call the specialized accounting classifier in llm_service
             category = categorize_document_text(text)
             if not category:
-                return "Unknown"
+                return "Të tjera" # Default Albanian "Other"
             return category
         except Exception as e:
             logger.error(f"Error during document categorization: {e}", exc_info=True)
-            return "Unknown"
+            return "Gabim gjatë kategorizimit"
 
 # --- CRITICAL INSTANTIATION ---
 CATEGORIZATION_SERVICE = CategorizationService()

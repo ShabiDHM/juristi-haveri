@@ -1,9 +1,9 @@
 # FILE: backend/app/services/llm_service.py
-# PHOENIX PROTOCOL - CORE INTELLIGENCE V70.3 (DISCLAIMER ENFORCEMENT)
-# 1. ADDED: Centralised Albanian disclaimer constant.
-# 2. ADDED: Mandatory disclaimer appended to all user‑facing text outputs.
-# 3. ENFORCED: Multidomain neutrality and citation accuracy.
-# 4. STATUS: 100% compliant with Senior Partner integrity rules.
+# PHOENIX PROTOCOL - CORE INTELLIGENCE V71.0 (ACCOUNTING TRANSFORMATION)
+# 1. REFACTOR: Transformed Universal Persona from 'Legal Partner' to 'Senior Certified Accountant & Tax Advisor'.
+# 2. REFACTOR: Adversarial Simulation updated to 'ATK Auditor Simulation'.
+# 3. REFACTOR: Contradiction Detection updated to 'Financial Anomaly Detection'.
+# 4. STATUS: 100% Accounting Aligned. Core intelligence synchronized.
 
 import os, json, logging, re, asyncio
 from typing import List, Dict, Any, Optional, AsyncGenerator
@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 
 # --- UNABRIDGED EXPORT LIST ---
 __all__ = [
-    "analyze_financial_portfolio", "analyze_case_integrity", "generate_adversarial_simulation",
-    "build_case_chronology", "translate_for_client", "detect_contradictions",
-    "extract_deadlines", "perform_litigation_cross_examination", "generate_summary",
+    "analyze_financial_portfolio", "analyze_business_integrity", "generate_audit_simulation",
+    "build_financial_history", "translate_for_client", "detect_accounting_anomalies",
+    "extract_deadlines", "perform_audit_verification", "generate_summary",
     "extract_graph_data", "get_embedding", "forensic_interrogation",
     "categorize_document_text", "sterilize_legal_text", "extract_expense_details_from_text",
     "query_global_rag_for_claims", "process_large_document_async", "stream_text_async"
@@ -29,7 +29,7 @@ OPENROUTER_MODEL = "deepseek/deepseek-chat"
 EMBEDDING_MODEL = "text-embedding-3-small"
 
 # --- PHOENIX: Mandatory Albanian disclaimer for all user‑facing AI text ---
-AI_DISCLAIMER = "\n\n---\n*Kjo përgjigje është gjeneruar nga AI, vetëm për referencë.*"
+AI_DISCLAIMER = "\n\n---\n*Kjo përgjigje është gjeneruar nga AI për qëllime informative kontabël.*"
 
 _async_client, _api_semaphore = None, None
 
@@ -54,21 +54,21 @@ def _parse_json_safely(content: Optional[str]) -> Dict[str, Any]:
             except: pass
         return {"raw_response": content, "error": "JSON_PARSE_FAILED"}
 
-# --- SENIOR PARTNER UNIVERSAL PERSONA (DOMAIN‑NEUTRAL) ---
-KOSOVO_LEGAL_BRAIN = """
-ROLI: Ti je 'Senior Legal Partner' në Kosovë.
-MANDATI: Është e ndaluar të japësh vetëm emrin e ligjit (Parroting). Gjithmonë lidhe ligjin me faktet konkrete të rastit.
-GJUHA: Çdo përgjigje duhet të jetë VETËM në gjuhën SHQIPE. Mos përdor Anglisht.
-DETYRA: Për çdo ligj të cituar, DUHET:
-1. Të përdorësh formatin: [Emri i Ligjit, Neni XX](doc://ligji). Nëse numri i nenit nuk dihet nga konteksti, përdor 'Neni përkatës'.
-2. Të tregosh 'RELEVANCËN' – pse ky ligj është thelbësor për rastin konkret.
+# --- SENIOR ACCOUNTANT UNIVERSAL PERSONA ---
+KOSOVO_FINANCIAL_BRAIN = """
+ROLI: Ti je 'Senior Certified Accountant' dhe Këshilltar Fiskal në Kosovë.
+MANDATI: Analizo çdo dokument përmes thjerrëzës së përputhshmërisë me ATK-në dhe Standardet e Kontabilitetit.
+GJUHA: Çdo përgjigje duhet të jetë VETËM në gjuhën SHQIPE.
+DETYRA: Për çdo rregullore ose ligj të cituar, DUHET:
+1. Të përdorësh formatin: [Emri i Ligjit/Rregullores, Neni XX](doc://ligji).
+2. Të tregosh 'NDIKIMIN FISKAL' – pse ky nen është thelbësor për financat e klientit.
 """
 
 def _call_llm(sys_p: str, user_p: str, json_mode: bool = False, temp: float = 0.1) -> Optional[str]:
     c = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=OPENROUTER_BASE_URL) if DEEPSEEK_API_KEY else None
     if not c: return None
     try:
-        messages = [{"role": "system", "content": f"{KOSOVO_LEGAL_BRAIN}\n{sys_p}"}, {"role": "user", "content": user_p}]
+        messages = [{"role": "system", "content": f"{KOSOVO_FINANCIAL_BRAIN}\n{sys_p}"}, {"role": "user", "content": user_p}]
         kwargs = {"model": OPENROUTER_MODEL, "messages": messages, "temperature": temp}
         if json_mode: kwargs["response_format"] = {"type": "json_object"}
         return c.chat.completions.create(**kwargs).choices[0].message.content
@@ -81,7 +81,7 @@ async def _call_llm_async(sys_p: str, user_p: str, json_mode: bool = False, temp
     if not client: return None
     async with get_semaphore():
         try:
-            kwargs = {"model": OPENROUTER_MODEL, "messages": [{"role": "system", "content": f"{KOSOVO_LEGAL_BRAIN}\n{sys_p}"}, {"role": "user", "content": user_p}], "temperature": temp}
+            kwargs = {"model": OPENROUTER_MODEL, "messages": [{"role": "system", "content": f"{KOSOVO_FINANCIAL_BRAIN}\n{sys_p}"}, {"role": "user", "content": user_p}], "temperature": temp}
             if json_mode: kwargs["response_format"] = {"type": "json_object"}
             res = await client.chat.completions.create(**kwargs)
             return res.choices[0].message.content
@@ -94,72 +94,66 @@ async def _call_llm_async(sys_p: str, user_p: str, json_mode: bool = False, temp
 async def process_large_document_async(text: str, task_type: str = "SUMMARY") -> str:
     """PHOENIX: Async document summarization + disclaimer."""
     if not text: return "Nuk u gjet tekst." + AI_DISCLAIMER
-    map_p = "Analizo këtë segment. Identifiko faktet dhe citoni [Ligjin](doc://ligji). Përgjigju vetëm SHQIP."
-    reduce_p = "Sintezo në opinion suprem juridik me citime të plota [Ligji](doc://ligji). Përgjigju vetëm SHQIP."
+    map_p = "Analizo këtë segment financiar. Identifiko transaksionet dhe citoni [Rregulloren](doc://ligji). Përgjigju vetëm SHQIP."
+    reduce_p = "Sintezo në një raport ekspert kontabël me citime të plota [Ligji Tatimor](doc://ligji). Përgjigju vetëm SHQIP."
     chunks = [text[i:i+5000] for i in range(0, len(text), 5000)]
     tasks = [_call_llm_async(map_p, f"SEGMENTI:\n{c}") for c in chunks]
     results = await asyncio.gather(*tasks)
     combined = "\n---\n".join([r for r in results if r])
     final = await _call_llm_async(reduce_p, f"ANALIZAT:\n{combined}")
-    return (final or "Sinteza dështoi.") + AI_DISCLAIMER
+    return (final or "Analiza dështoi.") + AI_DISCLAIMER
 
 # --- ASYNC OPTIMIZED ANALYSIS FUNCTIONS (JSON) ---
-# These return structured data – disclaimer NOT appended (preserves JSON integrity)
 
-async def generate_adversarial_simulation(context: str) -> Dict[str, Any]:
-    """PHOENIX: Async Simulation of Opposing Counsel Strategy (Albanian)."""
+async def generate_audit_simulation(context: str) -> Dict[str, Any]:
+    """PHOENIX: Simulation of a rigorous ATK Tax Audit."""
     sys = (
-        "Ti je Avokati Kundërshtar më agresiv në Kosovë. Detyra jote është të shkatërrosh rastin e palës sonë. "
-        "MANDATI: Përgjigju vetëm në gjuhën SHQIPE. Gjej dobësitë procedurale dhe materiale. "
-        "Përdor 'doc://ligji' për çdo argument. "
-        "Kthe JSON: {'opponent_strategy':'tekst_ne_shqip', 'weakness_attacks':['sulm_ne_shqip'], 'counter_claims':['pretendim_ne_shqip']}"
+        "Ti je një Inspektor Tatimor (ATK) jashtëzakonisht rigoroz. Detyra jote është të gjesh çdo gabim në deklarimet e klientit. "
+        "MANDATI: Përgjigju vetëm në gjuhën SHQIPE. Gjej mospërputhje në TVSH, TAK dhe kontribute. "
+        "Përdor 'doc://ligji' për referencat teknike. "
+        "Kthe JSON: {'opponent_strategy':'vërejtjet_e_auditimit', 'weakness_attacks':['anomalitë_e_gjetura'], 'counter_claims':['kërkesat_për_korrigjim']}"
     )
     res = await _call_llm_async(sys, context[:40000], True, 0.4)
     return _parse_json_safely(res)
 
-async def detect_contradictions(text: str) -> Dict[str, Any]:
-    """PHOENIX: Async Detection of logical or evidentiary inconsistencies (Albanian)."""
+async def detect_accounting_anomalies(text: str) -> Dict[str, Any]:
+    """PHOENIX: Detection of financial discrepancies or tax risks."""
     sys = (
-        "Identifiko mospërputhjet midis deklaratave dhe provave materiale. "
-        "MANDATI: Përgjigju vetëm në gjuhën SHQIPE. Përdor formatin [Ligji/Dokumenti](doc://ligji). "
-        "Kthe JSON: {'contradictions': [{'severity': 'HIGH/MEDIUM/LOW', 'claim': 'tekst_shqip', 'evidence': 'tekst_shqip', 'impact': 'tekst_shqip'}]}"
+        "Identifiko anomali midis faturave, llogarive bankare dhe deklaratave fiskale. "
+        "MANDATI: Përgjigju vetëm në gjuhën SHQIPE. Përdor formatin [Rregullorja](doc://ligji). "
+        "Kthe JSON: {'contradictions': [{'severity': 'HIGH/MEDIUM/LOW', 'claim': 'transaksioni_shqip', 'evidence': 'anomalia_e_gjetur', 'impact': 'ndikimi_fiskal'}]}"
     )
     res = await _call_llm_async(sys, text[:40000], True, 0.1)
     return _parse_json_safely(res)
 
-async def build_case_chronology(text: str) -> Dict[str, Any]:
-    """PHOENIX: Async Extraction of chronological events with facts (Albanian)."""
+async def build_financial_history(text: str) -> Dict[str, Any]:
+    """PHOENIX: Extraction of chronological financial events."""
     sys = (
-        "Nxirr një kronologji precize të ngjarjeve nga ky tekst. Injoro analizat ligjore. "
-        "MANDATI: Përgjigju vetëm në gjuhën SHQIPE. Përqëndruhu vetëm te faktet dhe datat. "
-        "Përdor formatin JSON: {'timeline': [{'date': 'Data ose Periudha', 'event': 'Përshkrimi i faktit në shqip'}]}"
+        "Nxirr një histori precize të transaksioneve dhe veprimeve fiskale nga ky tekst. "
+        "MANDATI: Përgjigju vetëm në gjuhën SHQIPE. Përqëndruhu te datat e faturave, pagesat dhe deklarimet. "
+        "Përdor formatin JSON: {'timeline': [{'date': 'Data', 'event': 'Veprimi Financiar'}]}"
     )
     res = await _call_llm_async(sys, text[:50000], True, 0.1)
     return _parse_json_safely(res)
 
 # --- LEGACY SUPPORT FUNCTIONS (PLAIN TEXT + DISCLAIMER) ---
 
-def analyze_case_integrity(context: str, custom_prompt: Optional[str] = None) -> Dict[str, Any]:
-    """JSON output – no disclaimer."""
-    sys = custom_prompt or "Analizo integritetin statutore. Përgjigju vetëm SHQIP. Kthe JSON."
+def analyze_business_integrity(context: str, custom_prompt: Optional[str] = None) -> Dict[str, Any]:
+    sys = custom_prompt or "Analizo përputhshmërinë fiskale dhe integritetin e llogarive. Përgjigju vetëm SHQIP. Kthe JSON."
     return _parse_json_safely(_call_llm(sys, context[:100000], True, 0.1))
 
 def extract_deadlines(text: str) -> Dict[str, Any]:
-    """JSON output – no disclaimer."""
-    return _parse_json_safely(_call_llm("Gjej afatet në SHQIP. JSON: {'deadlines':[]}", text[:20000], True))
+    return _parse_json_safely(_call_llm("Gjej afatet tatimore dhe të deklarimit në SHQIP. JSON: {'deadlines':[]}", text[:20000], True))
 
-def perform_litigation_cross_examination(target: str, context: List[str]) -> Dict[str, Any]:
-    """JSON output – no disclaimer."""
-    return _parse_json_safely(_call_llm(f"Pyetje për: {target} në SHQIP. JSON.", "\n".join(context)[:40000], True))
+def perform_audit_verification(target: str, context: List[str]) -> Dict[str, Any]:
+    return _parse_json_safely(_call_llm(f"Verifiko transaksionin: {target} në SHQIP. JSON.", "\n".join(context)[:40000], True))
 
 def generate_summary(text: str) -> str:
-    """PHOENIX: Plain‑text summary + disclaimer."""
-    res = _call_llm("Krijo përmbledhje në 3 pika në SHQIP.", text[:20000])
+    res = _call_llm("Krijo përmbledhje ekzekutive financiare në 3 pika në SHQIP.", text[:20000])
     return (res or "") + AI_DISCLAIMER
 
 def extract_graph_data(text: str) -> Dict[str, Any]:
-    """JSON output – no disclaimer."""
-    return _parse_json_safely(_call_llm("Nxjerr nyjet. Përgjigju SHQIP. JSON: {'nodes':[], 'edges':[]}", text[:30000], True))
+    return _parse_json_safely(_call_llm("Nxjerr lidhjet midis subjekteve financiare. Përgjigju SHQIP. JSON: {'nodes':[], 'edges':[]}", text[:30000], True))
 
 def get_embedding(text: str) -> List[float]:
     from openai import OpenAI as OAI
@@ -169,7 +163,6 @@ def get_embedding(text: str) -> List[float]:
     except: return [0.0] * 1536
 
 async def stream_text_async(sys_p: str, user_p: str, temp: float = 0.2) -> AsyncGenerator[str, None]:
-    """PHOENIX: Streaming response + final disclaimer chunk."""
     client = get_async_deepseek_client()
     if not client:
         yield "[OFFLINE]"
@@ -180,7 +173,7 @@ async def stream_text_async(sys_p: str, user_p: str, temp: float = 0.2) -> Async
             stream = await client.chat.completions.create(
                 model=OPENROUTER_MODEL,
                 messages=[
-                    {"role": "system", "content": f"{KOSOVO_LEGAL_BRAIN}\n{sys_p}"},
+                    {"role": "system", "content": f"{KOSOVO_FINANCIAL_BRAIN}\n{sys_p}"},
                     {"role": "user", "content": user_p}
                 ],
                 temperature=temp,
@@ -189,20 +182,17 @@ async def stream_text_async(sys_p: str, user_p: str, temp: float = 0.2) -> Async
             async for chunk in stream:
                 if chunk.choices[0].delta.content:
                     yield chunk.choices[0].delta.content
-            # Phoenix: Append mandatory Albanian disclaimer after stream ends
             yield AI_DISCLAIMER
         except Exception as e:
             yield f"[Gabim: {str(e)}]"
             yield AI_DISCLAIMER
 
 def forensic_interrogation(q: str, rows: List[str]) -> str:
-    """PHOENIX: Plain‑text answer + disclaimer."""
-    res = _call_llm(f"Përgjigju statutore SHQIP me [Ligji](doc://ligji) duke u bazuar në: {' '.join(rows)}", q, temp=0.0)
+    res = _call_llm(f"Përgjigju si auditor SHQIP me [Rregulloren](doc://ligji) duke u bazuar në: {' '.join(rows)}", q, temp=0.0)
     return (res or "") + AI_DISCLAIMER
 
 def categorize_document_text(text: str) -> str:
-    """Returns a single‑word category. Internal use – no disclaimer."""
-    res = _call_llm("Kategorizo në SHQIP. JSON {'category': '...'}.", text[:5000], True)
+    res = _call_llm("Kategorizo dokumentin (Faturë, Kontratë, Pasqyrë, etj) në SHQIP. JSON {'category': '...'}.", text[:5000], True)
     return _parse_json_safely(res).get("category", "Të tjera")
 
 def sterilize_legal_text(text: str) -> str:
@@ -210,8 +200,7 @@ def sterilize_legal_text(text: str) -> str:
     return sterilize_text_for_llm(text)
 
 def extract_expense_details_from_text(t: str) -> Dict[str, Any]:
-    """JSON output – no disclaimer."""
-    r = _parse_json_safely(_call_llm("Nxirr shpenzimin në SHQIP. JSON.", t[:3000], True))
+    r = _parse_json_safely(_call_llm("Nxirr detajet e shpenzimit në SHQIP (shuma, data, kategoria). JSON.", t[:3000], True))
     return {
         "category": r.get("category", "Shpenzime"),
         "amount": float(r.get("amount", 0.0)),
@@ -220,14 +209,26 @@ def extract_expense_details_from_text(t: str) -> Dict[str, Any]:
     }
 
 def analyze_financial_portfolio(d: str) -> Dict[str, Any]:
-    """JSON output – no disclaimer."""
-    return _parse_json_safely(_call_llm("Analizo financat në SHQIP. JSON.", d, True))
+    return _parse_json_safely(_call_llm("Analizo portofolin financiar dhe rreziqet në SHQIP. JSON.", d, True))
 
 def translate_for_client(t: str) -> str:
-    """PHOENIX: Plain‑text translation + disclaimer."""
-    res = _call_llm("Përkthe në SHQIP.", t)
+    res = _call_llm("Përkthe termat financiare në SHQIP të thjeshtë.", t)
     return (res or "") + AI_DISCLAIMER
 
 def query_global_rag_for_claims(r: str, q: str) -> Dict[str, Any]:
-    """JSON output – no disclaimer."""
-    return _parse_json_safely(_call_llm("Argumente statutore në SHQIP me [Ligji](doc://ligji). JSON.", f"RAG: {r}\nQ: {q}", True))
+    return _parse_json_safely(_call_llm("Gjej bazën rregullatore në SHQIP me [Rregulloren](doc://ligji). JSON.", f"RAG: {r}\nQ: {q}", True))
+
+def generate_adversarial_simulation(context: str) -> Dict[str, Any]:
+    """Legacy alias for generate_audit_simulation."""
+    import asyncio
+    return asyncio.run(generate_audit_simulation(context))
+
+def detect_contradictions(text: str) -> Dict[str, Any]:
+    """Legacy alias for detect_accounting_anomalies."""
+    import asyncio
+    return asyncio.run(detect_accounting_anomalies(text))
+
+def build_case_chronology(text: str) -> Dict[str, Any]:
+    """Legacy alias for build_financial_history."""
+    import asyncio
+    return asyncio.run(build_financial_history(text))

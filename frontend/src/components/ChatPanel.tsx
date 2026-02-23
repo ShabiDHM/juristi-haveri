@@ -1,13 +1,13 @@
 // FILE: src/components/ChatPanel.tsx
-// PHOENIX PROTOCOL - CHAT PANEL V5.11 (FULLY INTERNATIONALIZED)
-// 1. FIXED: All hardcoded strings replaced with translation keys.
-// 2. ADDED: Keys for law preview loading/error, thinking state.
-// 3. STATUS: Ready for i18n.
+// PHOENIX PROTOCOL - CHAT PANEL V5.12 (ACCOUNTING ICONOGRAPHY)
+// 1. REFACTOR: Replaced legal icons (Scale, GraduationCap) with accounting ones (Calculator, ClipboardCheck).
+// 2. UI: Updated Markdown renderer to use financial icons for regulation links.
+// 3. STATUS: 100% Accounting Aligned.
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-    Send, BrainCircuit, Trash2, User, Copy, Check, Zap, GraduationCap, Scale, Lock, Eye
+    Send, BrainCircuit, Trash2, User, Copy, Check, Zap, ClipboardCheck, Calculator, Lock, Eye
 } from 'lucide-react';
 import { ChatMessage } from '../data/types';
 import { TFunction } from 'i18next';
@@ -55,7 +55,6 @@ const MessageCopyButton: React.FC<{ text: string, isUser: boolean }> = ({ text, 
     );
 };
 
-// Tooltip component for law preview
 const LawPreviewTooltip: React.FC<{ chunkId: string; children: React.ReactNode; t: TFunction }> = ({ chunkId, children, t }) => {
     const [preview, setPreview] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -67,7 +66,7 @@ const LawPreviewTooltip: React.FC<{ chunkId: string; children: React.ReactNode; 
             setLoading(true);
             apiService.getLawByChunkId(chunkId)
                 .then(data => setPreview(data.text.substring(0, 200) + '...'))
-                .catch(() => setPreview(t('lawPreview.error', 'Nuk u ngarkua')))
+                .catch(() => setPreview(t('lawPreview.error', { defaultValue: 'Nuk u ngarkua' })))
                 .finally(() => setLoading(false));
         }
     }, [show, chunkId, preview, loading, t]);
@@ -91,7 +90,7 @@ const LawPreviewTooltip: React.FC<{ chunkId: string; children: React.ReactNode; 
                         exit={{ opacity: 0 }}
                         className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-3 glass-high text-xs text-gray-300 rounded-xl border border-white/10 shadow-2xl z-50"
                     >
-                        {loading ? t('lawPreview.loading', 'Duke ngarkuar...') : preview}
+                        {loading ? t('lawPreview.loading', { defaultValue: 'Duke ngarkuar...' }) : preview}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -99,14 +98,12 @@ const LawPreviewTooltip: React.FC<{ chunkId: string; children: React.ReactNode; 
     );
 };
 
-// Custom markdown components
 const MarkdownComponents = (t: TFunction) => ({
     h1: ({node, ...props}: any) => <h1 className="text-xl font-bold text-white mb-4 mt-6 border-b border-white/10 pb-2 uppercase tracking-wider" {...props} />,
     h2: ({node, ...props}: any) => <h2 className="text-lg font-bold text-primary-start mb-3 mt-5" {...props} />,
     h3: ({node, ...props}: any) => <h3 className="text-md font-bold text-accent-end mb-2 mt-4 flex items-center gap-2" {...props} />,
     p: ({node, ...props}: any) => <p className="mb-3 last:mb-0 leading-relaxed text-gray-200" {...props} />, 
     a: ({href, children}: any) => {
-        // For law links (/laws/...), render as a clickable badge with React Router Link
         if (href?.startsWith('/laws/')) {
             const chunkId = href.split('/').pop();
             return (
@@ -115,14 +112,13 @@ const MarkdownComponents = (t: TFunction) => ({
                         to={href}
                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all hover:shadow-lg hover:scale-105 bg-secondary-start/20 text-secondary-start border-secondary-start/30"
                     >
-                        <Scale size={12} />
+                        <Calculator size={12} />
                         {children}
                         <Eye size={12} className="opacity-70" />
                     </Link>
                 </LawPreviewTooltip>
             );
         }
-        // For external links, use normal anchor
         return (
             <a
                 href={href}
@@ -156,7 +152,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
   
-  // Determine if we should show the branded thinking state
   const lastMessage = messages[messages.length - 1];
   const showThinking = isSendingMessage && (!lastMessage || lastMessage.role !== 'ai' || !lastMessage.content.trim());
 
@@ -174,7 +169,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                     <Zap size={12} /> {t('chatPanel.modeFast')}
                 </button>
                 <button onClick={() => isPro && setReasoningMode('DEEP')} disabled={!isPro} className={`flex items-center gap-1 px-3 py-1 rounded-md text-[10px] font-bold transition-all ${reasoningMode === 'DEEP' ? 'bg-purple-500/20 text-purple-400' : 'text-gray-600'}`}>
-                    {!isPro ? <Lock size={10} className="mr-1" /> : <GraduationCap size={12} className="mr-1" />}
+                    {!isPro ? <Lock size={10} className="mr-1" /> : <ClipboardCheck size={12} className="mr-1" />}
                     {t('chatPanel.modeDeep')}
                 </button>
             </div>
@@ -201,7 +196,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                 <motion.div key="thinking-state" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-full bg-primary-start flex items-center justify-center shadow-lg"><BrainCircuit className="w-4 h-4 text-white" /></div>
                     <div className="glass-panel text-blue-400 font-bold rounded-2xl px-5 py-3.5 text-sm flex items-center gap-1 border border-blue-500/20 shadow-blue-500/5">
-                        {t('chat.thinking', 'Sokrati duke menduar')}<ThinkingDots />
+                        {t('chat.thinking', { defaultValue: 'Sokrati duke analizuar' })}<ThinkingDots />
                     </div>
                 </motion.div>
             )}
